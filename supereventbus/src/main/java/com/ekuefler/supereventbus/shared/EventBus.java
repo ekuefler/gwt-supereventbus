@@ -1,5 +1,6 @@
 package com.ekuefler.supereventbus.shared;
 
+import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Queue;
@@ -51,15 +52,23 @@ public class EventBus {
     isDispatching = false;
   }
 
-  public <T> void register(T object, Class<? extends EventRegistration<T>> registrationClass) {
+  public <T> void register(T owner, Class<? extends EventRegistration<T>> registrationClass) {
     EventRegistration<T> registration = GWT.create(registrationClass);
-    EventHandler<T> handler = new EventHandler<T>();
-    handler.owner = object;
-    handler.registration = registration;
-    handlers.add(handler);
+    handlers.add(new EventHandler<T>(owner, registration));
   }
 
-  public void unregister(Object object) {}
+  public void unregister(Object owner) {
+    boolean removed = false;
+    for (Iterator<EventHandler<?>> it = handlers.iterator(); it.hasNext();) {
+      if (owner == it.next().owner) {
+        it.remove();
+        removed = true;
+      }
+    }
+    if (!removed) {
+      throw new IllegalArgumentException("Object was never registered: " + owner);
+    }
+  }
 
   public void addExceptionHandler(ExceptionHandler exceptionHandler) {
     exceptionHandlers.add(exceptionHandler);
@@ -68,6 +77,11 @@ public class EventBus {
   private class EventHandler<T> {
     T owner;
     EventRegistration<T> registration;
+
+    public EventHandler(T owner, EventRegistration<T> registration) {
+      this.owner = owner;
+      this.registration = registration;
+    }
   }
 
   private static class EventWithHandler<T> {

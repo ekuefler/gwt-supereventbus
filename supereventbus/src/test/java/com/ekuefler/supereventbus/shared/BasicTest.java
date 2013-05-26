@@ -4,8 +4,7 @@ import java.util.List;
 
 public class BasicTest extends SuperEventBusTestCase {
 
-  static class TestOwner {
-    interface MyRegistration extends EventRegistration<TestOwner> {}
+  class TestOwner {
 
     private String string;
     private int integer;
@@ -31,7 +30,15 @@ public class BasicTest extends SuperEventBusTestCase {
     void handleListOfString(List<String> event) {
       listOfString = event;
     }
+
+    @Subscribe
+    void handleChar(char event) {
+      eventBus.unregister(this);
+      eventBus.post("Should never see this");
+    }
   }
+
+  interface MyRegistration extends EventRegistration<TestOwner> {}
 
   private TestOwner owner;
 
@@ -39,25 +46,25 @@ public class BasicTest extends SuperEventBusTestCase {
   protected void gwtSetUp() throws Exception {
     super.gwtSetUp();
     owner = new TestOwner();
-    eventBus.register(owner, TestOwner.MyRegistration.class);
+    eventBus.register(owner, MyRegistration.class);
   }
 
-  public void testShouldDispatchObjects() throws Exception {
+  public void testShouldDispatchObjects() {
     eventBus.post("hello world");
     assertEquals("hello world", owner.string);
   }
 
-  public void testShouldDispatchPrimitives() throws Exception {
+  public void testShouldDispatchPrimitives() {
     eventBus.post(123);
     assertEquals(123, owner.integer);
   }
 
-  public void testShouldDispatchBoxedPrimitives() throws Exception {
+  public void testShouldDispatchBoxedPrimitives() {
     eventBus.post(new Integer(123));
     assertEquals(123, owner.integer);
   }
 
-  public void testShouldDispatchArrays() throws Exception {
+  public void testShouldDispatchArrays() {
     eventBus.post(new String[] {"hello", "world"});
 
     assertEquals(2, owner.stringArray.length);
@@ -65,8 +72,39 @@ public class BasicTest extends SuperEventBusTestCase {
     assertEquals("world", owner.stringArray[1]);
   }
 
-  public void testShouldDispatchGenericTypes() throws Exception {
+  public void testShouldDispatchGenericTypes() {
     eventBus.post(listOf("hello", "world"));
     assertEquals(listOf("hello", "world"), owner.listOfString);
+  }
+
+  public void testShouldNotDispatchEventsAfterUnregistering() {
+    eventBus.post("before");
+    eventBus.unregister(owner);
+    eventBus.post("after");
+
+    assertEquals("before", owner.string);
+  }
+
+  public void testShouldAllowUnregisteringInEventHandler() {
+    eventBus.post("before");
+    eventBus.post('a'); // Triggers a call to unregister
+    eventBus.post("after");
+
+    assertEquals("before", owner.string);
+  }
+
+  public void testShouldThrowExceptionWhenUnregisteringObjectNotRegistered() {
+    try {
+      eventBus.unregister("something");
+      fail();
+    } catch (IllegalArgumentException expected) {}
+  }
+
+  public void testShouldThrowExceptionWhenUnregisteringTwice() {
+    eventBus.unregister(owner);
+    try {
+      eventBus.unregister(owner);
+      fail();
+    } catch (IllegalArgumentException expected) {}
   }
 }
