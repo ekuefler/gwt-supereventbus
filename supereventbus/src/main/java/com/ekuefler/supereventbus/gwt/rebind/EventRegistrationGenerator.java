@@ -1,7 +1,10 @@
 package com.ekuefler.supereventbus.gwt.rebind;
 
 import java.io.PrintWriter;
+import java.util.LinkedList;
+import java.util.List;
 
+import com.ekuefler.supereventbus.shared.impl.Method;
 import com.google.gwt.core.ext.Generator;
 import com.google.gwt.core.ext.GeneratorContext;
 import com.google.gwt.core.ext.TreeLogger;
@@ -23,7 +26,7 @@ public class EventRegistrationGenerator extends Generator {
       JClassType targetType = getTargetType(eventBinderType, context.getTypeOracle());
       SourceWriter writer = createSourceWriter(logger, context, eventBinderType, targetType);
       if (writer != null) { // Otherwise the class was already created
-        new EventRegistrationWriter().writeDispatch(targetType, writer);
+        new EventRegistrationWriter().writeGetMethods(targetType, writer);
         writer.commit(logger);
       }
       return new StringBuilder()
@@ -50,6 +53,9 @@ public class EventRegistrationGenerator extends Generator {
         packageName, simpleName);
 
     composer.addImplementedInterface(eventBinderType.getName());
+    composer.addImport(LinkedList.class.getCanonicalName());
+    composer.addImport(List.class.getCanonicalName());
+    composer.addImport(Method.class.getCanonicalName());
 
     PrintWriter printWriter = context.tryCreate(logger, packageName, simpleName);
     return printWriter != null ? composer.createSourceWriter(context, printWriter) : null;

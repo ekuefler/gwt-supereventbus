@@ -5,25 +5,28 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Queue;
 
+import com.ekuefler.supereventbus.shared.impl.Method;
 import com.google.gwt.core.shared.GWT;
 
 public class EventBus {
 
-  private final List<EventHandler<?>> handlers = new LinkedList<EventHandler<?>>();
-  private final List<ExceptionHandler> exceptionHandlers = new LinkedList<ExceptionHandler>();
+  private final List<EventHandler<?, Object>> handlers = new LinkedList<EventHandler<?, Object>>();
 
-  private final Queue<EventWithHandler<?>> eventsToDispatch = new LinkedList<EventWithHandler<?>>();
+  private final Queue<EventWithHandler<?, Object>> eventsToDispatch =
+      new LinkedList<EventWithHandler<?, Object>>();
   private boolean isDispatching = false;
+
+  private final List<ExceptionHandler> exceptionHandlers = new LinkedList<ExceptionHandler>();
 
   public <T> void post(T event) {
     if (event == null) {
       throw new NullPointerException();
     }
 
-    for (EventHandler<?> wildcardHandler : handlers) {
+    for (EventHandler<?, Object> wildcardHandler : handlers) {
       @SuppressWarnings("unchecked")
-      EventHandler<T> handler = (EventHandler<T>) wildcardHandler;
-      eventsToDispatch.add(new EventWithHandler<T>(event, handler));
+      EventHandler<T, Object> handler = (EventHandler<T, Object>) wildcardHandler;
+      eventsToDispatch.add(new EventWithHandler<T, Object>(event, handler));
     }
 
     if (!isDispatching) {
@@ -34,11 +37,13 @@ public class EventBus {
   @SuppressWarnings("unchecked")
   private <T> void dispatchQueuedEvents() {
     isDispatching = true;
-    EventWithHandler<T> eventWithHandler;
-    while ((eventWithHandler = (EventWithHandler<T>) eventsToDispatch.poll()) != null) {
-      EventHandler<T> handler = eventWithHandler.handler;
+    EventWithHandler<T, Object> eventWithHandler;
+    while ((eventWithHandler = (EventWithHandler<T, Object>) eventsToDispatch.poll()) != null) {
+      EventHandler<T, Object> handler = eventWithHandler.handler;
       try {
-        handler.registration.dispatch(handler.owner, eventWithHandler.event);
+        if (handler.method.acceptsArgument(eventWithHandler.event)) {
+          handler.method.invoke(handler.owner, eventWithHandler.event);
+        }
       } catch (Exception e) {
         for (ExceptionHandler exceptionHandler : exceptionHandlers) {
           try {
@@ -54,12 +59,16 @@ public class EventBus {
 
   public <T> void register(T owner, Class<? extends EventRegistration<T>> registrationClass) {
     EventRegistration<T> registration = GWT.create(registrationClass);
-    handlers.add(new EventHandler<T>(owner, registration));
+    for (Method<T, ?> wildcardMethod : registration.getMethods()) {
+      @SuppressWarnings("unchecked")
+      Method<T, Object> method = (Method<T, Object>) wildcardMethod;
+      handlers.add(new EventHandler<T, Object>(owner, method));
+    }
   }
 
   public void unregister(Object owner) {
     boolean removed = false;
-    for (Iterator<EventHandler<?>> it = handlers.iterator(); it.hasNext();) {
+    for (Iterator<EventHandler<?, Object>> it = handlers.iterator(); it.hasNext();) {
       if (owner == it.next().owner) {
         it.remove();
         removed = true;
@@ -74,21 +83,21 @@ public class EventBus {
     exceptionHandlers.add(exceptionHandler);
   }
 
-  private class EventHandler<T> {
+  private class EventHandler<T, U> {
     T owner;
-    EventRegistration<T> registration;
+    Method<T, U> method;
 
-    public EventHandler(T owner, EventRegistration<T> registration) {
+    public EventHandler(T owner, Method<T, U> method) {
       this.owner = owner;
-      this.registration = registration;
+      this.method = method;
     }
   }
 
-  private static class EventWithHandler<T> {
+  private static class EventWithHandler<T, U> {
     final Object event;
-    final EventHandler<T> handler;
+    final EventHandler<T, U> handler;
 
-    public EventWithHandler(Object event, EventHandler<T> handler) {
+    public EventWithHandler(Object event, EventHandler<T, U> handler) {
       this.event = event;
       this.handler = handler;
     }

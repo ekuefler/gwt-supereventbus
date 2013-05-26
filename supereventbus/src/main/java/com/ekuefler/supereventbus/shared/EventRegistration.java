@@ -1,5 +1,9 @@
 package com.ekuefler.supereventbus.shared;
 
+import java.util.List;
+
+import com.ekuefler.supereventbus.shared.impl.Method;
+
 public interface EventRegistration<T> {
-  void dispatch(T owner, Object event);
+  List<Method<T, ?>> getMethods();
 }

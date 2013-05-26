@@ -9,36 +9,58 @@ import com.google.gwt.core.ext.typeinfo.JType;
 import com.google.gwt.user.rebind.SourceWriter;
 
 class EventRegistrationWriter {
-  void writeDispatch(JClassType target, SourceWriter writer) {
-    writer.println("public void dispatch(%s owner, Object event) {",
-        target.getQualifiedSourceName());
+  void writeGetMethods(JClassType target, SourceWriter writer) {
+    String targetType = target.getQualifiedSourceName();
+    writer.println("public List<Method<%s, ?>> getMethods() {", targetType);
     writer.indent();
+    writer.println("List<Method<%1$s, ?>> methods = new LinkedList<Method<%1$s, ?>>();",
+        targetType);
     for (JMethod method : target.getMethods()) {
-      if (method.getAnnotation(Subscribe.class) != null) {
-        String paramType = getFirstParameterType(method);
-        writer.println("if (event instanceof %s%s) {", paramType, getFilterPredicate(method));
-        writer.indentln("owner.%s((%s) event);", method.getName(), paramType);
+      if (method.getAnnotation(Subscribe.class) == null) {
+        continue;
+      }
+      String paramType = getFirstParameterType(method);
+      writer.println("methods.add(new Method<%s, %s>() {", targetType, paramType);
+      writer.indent();
+      {
+        writer.println("public void invoke(%s instance, %s arg) {", targetType, paramType);
+        if (method.getAnnotation(When.class) != null) {
+          writer.indentln("if (%s) { instance.%s(arg); }", getFilter(method), method.getName());
+        } else {
+          writer.indentln("instance.%s(arg);", method.getName());
+        }
+        writer.println("}");
+
+        writer.println("public boolean acceptsArgument(Object arg) {");
+        writer.indentln("return arg instanceof %s;", paramType);
         writer.println("}");
       }
+      writer.outdent();
+      writer.println("});");
     }
+    writer.println("return methods;");
     writer.outdent();
     writer.println("}");
   }
 
-  private String getFilterPredicate(JMethod method) {
+  private String getFilter(JMethod method) {
     StringBuilder predicate = new StringBuilder();
     When annotation = method.getAnnotation(When.class);
+    boolean first = true;
     if (annotation != null) {
       for (Class<?> filter : annotation.value()) {
-        predicate.append(String.format("\n&& new %s().accepts((%s) event)",
-            filter.getCanonicalName(), getFirstParameterType(method)));
+        if (!first) {
+          predicate.append("\n    && ");
+        }
+        first = false;
+        predicate.append(String.format("new %s().accepts(arg)", filter.getCanonicalName()));
       }
     }
     return predicate.toString();
   }
 
   private String getFirstParameterType(JMethod method) {
-    // If the paramter type is primitive, box it
+    // If the parameter type is primitive, box it
     JType type = method.getParameterTypes()[0];
     if (type.isPrimitive() != null) {
       if (type.isPrimitive() == JPrimitiveType.BOOLEAN) {
