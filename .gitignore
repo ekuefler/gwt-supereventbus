@@ -1,0 +1,7 @@
+.classpath
+.metadata/
+.project
+.settings/
+gwt-unitCache/
+target/
+war/
