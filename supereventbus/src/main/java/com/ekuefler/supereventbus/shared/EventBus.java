@@ -9,11 +9,16 @@ import com.google.gwt.core.shared.GWT;
 public class EventBus {
 
   private final List<EventHandler> handlers = new LinkedList<EventHandler>();
+  private final List<ExceptionHandler> exceptionHandlers = new LinkedList<ExceptionHandler>();
 
   private final Queue<EventWithHandler> eventsToDispatch = new LinkedList<EventWithHandler>();
   private boolean isDispatching = false;
 
   public void post(Object event) {
+    if (event == null) {
+      throw new NullPointerException();
+    }
+
     for (EventHandler handler : handlers) {
       eventsToDispatch.add(new EventWithHandler(event, handler));
     }
@@ -27,7 +32,17 @@ public class EventBus {
     EventWithHandler eventWithHandler;
     while ((eventWithHandler = eventsToDispatch.poll()) != null) {
       EventHandler handler = eventWithHandler.handler;
-      handler.registration.dispatch(handler.owner, eventWithHandler.event);
+      try {
+        handler.registration.dispatch(handler.owner, eventWithHandler.event);
+      } catch (Exception e) {
+        for (ExceptionHandler exceptionHandler : exceptionHandlers) {
+          try {
+            exceptionHandler.handleException(e);
+          } catch (Exception ex) {
+            // Give up
+          }
+        }
+      }
     }
     isDispatching = false;
   }
@@ -41,6 +56,10 @@ public class EventBus {
   }
 
   public void unregister(Object object) {}
+
+  public void addExceptionHandler(ExceptionHandler exceptionHandler) {
+    exceptionHandlers.add(exceptionHandler);
+  }
 
   private class EventHandler {
     Object owner;
