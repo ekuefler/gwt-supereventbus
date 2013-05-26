@@ -1,6 +1,7 @@
 package com.ekuefler.supereventbus.gwt.rebind;
 
 import com.ekuefler.supereventbus.shared.Subscribe;
+import com.ekuefler.supereventbus.shared.filtering.When;
 import com.google.gwt.core.ext.typeinfo.JClassType;
 import com.google.gwt.core.ext.typeinfo.JMethod;
 import com.google.gwt.core.ext.typeinfo.JPrimitiveType;
@@ -14,14 +15,26 @@ class EventRegistrationWriter {
     for (JMethod method : target.getMethods()) {
       if (method.getAnnotation(Subscribe.class) != null) {
         String paramType = getFirstParameterType(method);
-        writer.print("if (event instanceof %s) {", paramType);
+        writer.println("if (event instanceof %s%s) {", paramType, getFilterPredicate(method));
         writer.indentln("((%s) owner).%s((%s) event);",
             target.getQualifiedSourceName(), method.getName(), paramType);
-        writer.print("}");
+        writer.println("}");
       }
     }
     writer.outdent();
     writer.println("}");
+  }
+
+  private String getFilterPredicate(JMethod method) {
+    StringBuilder predicate = new StringBuilder();
+    When annotation = method.getAnnotation(When.class);
+    if (annotation != null) {
+      for (Class<?> filter : annotation.value()) {
+        predicate.append(String.format("\n&& new %s().accepts((%s) event)",
+            filter.getCanonicalName(), getFirstParameterType(method)));
+      }
+    }
+    return predicate.toString();
   }
 
   private String getFirstParameterType(JMethod method) {
