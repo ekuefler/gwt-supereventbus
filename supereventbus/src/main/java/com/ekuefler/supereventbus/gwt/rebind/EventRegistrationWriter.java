@@ -10,14 +10,14 @@ import com.google.gwt.user.rebind.SourceWriter;
 
 class EventRegistrationWriter {
   void writeDispatch(JClassType target, SourceWriter writer) {
-    writer.println("public void dispatch(Object owner, Object event) {");
+    writer.println("public void dispatch(%s owner, Object event) {",
+        target.getQualifiedSourceName());
     writer.indent();
     for (JMethod method : target.getMethods()) {
       if (method.getAnnotation(Subscribe.class) != null) {
         String paramType = getFirstParameterType(method);
         writer.println("if (event instanceof %s%s) {", paramType, getFilterPredicate(method));
-        writer.indentln("((%s) owner).%s((%s) event);",
-            target.getQualifiedSourceName(), method.getName(), paramType);
+        writer.indentln("owner.%s((%s) event);", method.getName(), paramType);
         writer.println("}");
       }
     }
