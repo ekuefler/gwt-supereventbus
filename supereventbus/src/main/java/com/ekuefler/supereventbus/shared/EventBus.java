@@ -1,8 +1,12 @@
 package com.ekuefler.supereventbus.shared;
 
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Queue;
 
 import com.ekuefler.supereventbus.shared.impl.Method;
@@ -10,10 +14,21 @@ import com.google.gwt.core.shared.GWT;
 
 public class EventBus {
 
-  private final List<EventHandler<?, Object>> handlers = new LinkedList<EventHandler<?, Object>>();
+  private static final Method<Object, Object> NULL_METHOD = new Method<Object, Object>() {
+    @Override
+    public void invoke(Object instance, Object arg) {}
 
-  private final Queue<EventWithHandler<?, Object>> eventsToDispatch =
-      new LinkedList<EventWithHandler<?, Object>>();
+    @Override
+    public boolean acceptsArgument(Object arg) {
+      return false;
+    }
+  };
+
+  private final List<EventHandler<?, ?>> globalHandlerList = new ArrayList<EventHandler<?, ?>>();
+  private final Map<Class<?>, CacheEntry> handlerCache = new HashMap<Class<?>, CacheEntry>();
+
+  private final Queue<EventWithHandler<?, ?>> eventsToDispatch =
+      new LinkedList<EventWithHandler<?, ?>>();
   private boolean isDispatching = false;
 
   private final List<ExceptionHandler> exceptionHandlers = new LinkedList<ExceptionHandler>();
@@ -23,7 +38,20 @@ public class EventBus {
       throw new NullPointerException();
     }
 
-    for (EventHandler<?, Object> wildcardHandler : handlers) {
+    if (!handlerCache.containsKey(event.getClass())) {
+      handlerCache.put(event.getClass(), new CacheEntry());
+    }
+
+    CacheEntry cacheEntry = handlerCache.get(event.getClass());
+    int numGlobalHandlers = globalHandlerList.size();
+    for (; cacheEntry.nextHandlerToCheck < numGlobalHandlers; cacheEntry.nextHandlerToCheck++) {
+      EventHandler<?, ?> handler = globalHandlerList.get(cacheEntry.nextHandlerToCheck);
+      if (handler.method.acceptsArgument(event)) {
+        cacheEntry.knownHandlers.add(handler);
+      }
+    }
+
+    for (EventHandler<?, ?> wildcardHandler : cacheEntry.knownHandlers) {
       @SuppressWarnings("unchecked")
       EventHandler<T, Object> handler = (EventHandler<T, Object>) wildcardHandler;
       eventsToDispatch.add(new EventWithHandler<T, Object>(event, handler));
@@ -41,9 +69,7 @@ public class EventBus {
     while ((eventWithHandler = (EventWithHandler<T, Object>) eventsToDispatch.poll()) != null) {
       EventHandler<T, Object> handler = eventWithHandler.handler;
       try {
-        if (handler.method.acceptsArgument(eventWithHandler.event)) {
-          handler.method.invoke(handler.owner, eventWithHandler.event);
-        }
+        handler.method.invoke(handler.owner, eventWithHandler.event);
       } catch (Exception e) {
         for (ExceptionHandler exceptionHandler : exceptionHandlers) {
           try {
@@ -62,20 +88,30 @@ public class EventBus {
     for (Method<T, ?> wildcardMethod : registration.getMethods()) {
       @SuppressWarnings("unchecked")
       Method<T, Object> method = (Method<T, Object>) wildcardMethod;
-      handlers.add(new EventHandler<T, Object>(owner, method));
+      globalHandlerList.add(new EventHandler<T, Object>(owner, method));
     }
   }
 
   public void unregister(Object owner) {
     boolean removed = false;
-    for (Iterator<EventHandler<?, Object>> it = handlers.iterator(); it.hasNext();) {
-      if (owner == it.next().owner) {
-        it.remove();
+    for (EventHandler<?, ?> handler : globalHandlerList) {
+      if (owner == handler.owner) {
+        handler.nullify();
         removed = true;
       }
     }
+
     if (!removed) {
       throw new IllegalArgumentException("Object was never registered: " + owner);
+    }
+
+    for (Entry<Class<?>, CacheEntry> entry : handlerCache.entrySet()) {
+      CacheEntry cacheEntry = entry.getValue();
+      for (Iterator<EventHandler<?, ?>> it = cacheEntry.knownHandlers.iterator(); it.hasNext();) {
+        if (owner == it.next().owner) {
+          it.remove();
+        }
+      }
     }
   }
 
@@ -83,13 +119,19 @@ public class EventBus {
     exceptionHandlers.add(exceptionHandler);
   }
 
-  private class EventHandler<T, U> {
+  private static class EventHandler<T, U> {
     T owner;
     Method<T, U> method;
 
-    public EventHandler(T owner, Method<T, U> method) {
+    EventHandler(T owner, Method<T, U> method) {
       this.owner = owner;
       this.method = method;
+    }
+
+    @SuppressWarnings("unchecked")
+    void nullify() {
+      owner = null;
+      method = (Method<T, U>) NULL_METHOD;
     }
   }
 
@@ -97,9 +139,14 @@ public class EventBus {
     final Object event;
     final EventHandler<T, U> handler;
 
-    public EventWithHandler(Object event, EventHandler<T, U> handler) {
+    EventWithHandler(Object event, EventHandler<T, U> handler) {
       this.event = event;
       this.handler = handler;
     }
+  }
+
+  private class CacheEntry {
+    final List<EventHandler<?, ?>> knownHandlers = new LinkedList<EventHandler<?, ?>>();
+    int nextHandlerToCheck = 0;
   }
 }
