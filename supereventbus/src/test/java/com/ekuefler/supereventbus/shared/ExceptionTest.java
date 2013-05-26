@@ -50,31 +50,39 @@ public class ExceptionTest extends SuperEventBusTestCase {
   }
 
   public void testShouldAlertExceptionHandlerWhenErrorsOccur() {
+    final List<Object> events = new LinkedList<Object>();
     final List<Exception> exceptions = new LinkedList<Exception>();
     eventBus.addExceptionHandler(new ExceptionHandler() {
       @Override
-      public void handleException(Exception e) {
+      public void handleException(Object event, Exception e) {
+        events.add(event);
         exceptions.add(e);
       }
     });
 
     eventBus.post("string"); // Will throw an exception
 
+    assertEquals(1, events.size());
+    assertEquals("string", events.get(0));
     assertEquals(1, exceptions.size());
     assertTrue(exceptions.get(0) instanceof UnsupportedOperationException);
   }
 
   public void testShouldAlertExceptionHandlerWhenErrorsOccurInTransitiveHandlers() {
+    final List<Object> events = new LinkedList<Object>();
     final List<Exception> exceptions = new LinkedList<Exception>();
     eventBus.addExceptionHandler(new ExceptionHandler() {
       @Override
-      public void handleException(Exception e) {
+      public void handleException(Object event, Exception e) {
+        events.add(event);
         exceptions.add(e);
       }
     });
 
     eventBus.post(123); // Will fire an event that will throw an exception
 
+    assertEquals(1, events.size());
+    assertEquals("string", events.get(0)); // Was fired by the handler for Integer
     assertEquals(1, exceptions.size());
     assertTrue(exceptions.get(0) instanceof UnsupportedOperationException);
   }
@@ -82,7 +90,7 @@ public class ExceptionTest extends SuperEventBusTestCase {
   public void testShouldIgnoreExceptionsInExceptionHandlers() {
     eventBus.addExceptionHandler(new ExceptionHandler() {
       @Override
-      public void handleException(Exception e) {
+      public void handleException(Object event, Exception e) {
         throw new UnsupportedOperationException();
       }
     });

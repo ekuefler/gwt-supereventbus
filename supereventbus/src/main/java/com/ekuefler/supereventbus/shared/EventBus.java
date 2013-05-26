@@ -33,6 +33,17 @@ public class EventBus {
 
   private final List<ExceptionHandler> exceptionHandlers = new LinkedList<ExceptionHandler>();
 
+  public EventBus() {
+    if (!GWT.isProdMode()) {
+      addExceptionHandler(new ExceptionHandler() {
+        @Override
+        public void handleException(Object event, Exception e) {
+          GWT.log("Got exception when posting event '" + event + "': " + e);
+        }
+      });
+    }
+  }
+
   public <T> void post(T event) {
     if (event == null) {
       throw new NullPointerException();
@@ -73,7 +84,7 @@ public class EventBus {
       } catch (Exception e) {
         for (ExceptionHandler exceptionHandler : exceptionHandlers) {
           try {
-            exceptionHandler.handleException(e);
+            exceptionHandler.handleException(eventWithHandler.event, e);
           } catch (Exception ex) {
             // Give up
           }
