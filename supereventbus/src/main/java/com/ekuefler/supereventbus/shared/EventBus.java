@@ -8,6 +8,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Queue;
+import java.util.SortedMap;
+import java.util.TreeMap;
 
 import com.ekuefler.supereventbus.shared.impl.Method;
 import com.google.gwt.core.shared.GWT;
@@ -22,9 +24,15 @@ public class EventBus {
     public boolean acceptsArgument(Object arg) {
       return false;
     }
+
+    @Override
+    public int getPriority() {
+      return 0;
+    }
   };
 
-  private final List<EventHandler<?, ?>> globalHandlerList = new ArrayList<EventHandler<?, ?>>();
+  private final Map<Integer, List<EventHandler<?, ?>>> allHandlersByPriority =
+      new HashMap<Integer, List<EventHandler<?, ?>>>();
   private final Map<Class<?>, CacheEntry> handlerCache = new HashMap<Class<?>, CacheEntry>();
 
   private final Queue<EventWithHandler<?, ?>> eventsToDispatch =
@@ -52,17 +60,10 @@ public class EventBus {
     if (!handlerCache.containsKey(event.getClass())) {
       handlerCache.put(event.getClass(), new CacheEntry());
     }
-
     CacheEntry cacheEntry = handlerCache.get(event.getClass());
-    int numGlobalHandlers = globalHandlerList.size();
-    for (; cacheEntry.nextHandlerToCheck < numGlobalHandlers; cacheEntry.nextHandlerToCheck++) {
-      EventHandler<?, ?> handler = globalHandlerList.get(cacheEntry.nextHandlerToCheck);
-      if (handler.method.acceptsArgument(event)) {
-        cacheEntry.knownHandlers.add(handler);
-      }
-    }
 
-    for (EventHandler<?, ?> wildcardHandler : cacheEntry.knownHandlers) {
+    cacheEntry.update(event);
+    for (EventHandler<?, ?> wildcardHandler : cacheEntry.getAllHandlers()) {
       @SuppressWarnings("unchecked")
       EventHandler<T, Object> handler = (EventHandler<T, Object>) wildcardHandler;
       eventsToDispatch.add(new EventWithHandler<T, Object>(event, handler));
@@ -99,16 +100,22 @@ public class EventBus {
     for (Method<T, ?> wildcardMethod : registration.getMethods()) {
       @SuppressWarnings("unchecked")
       Method<T, Object> method = (Method<T, Object>) wildcardMethod;
-      globalHandlerList.add(new EventHandler<T, Object>(owner, method));
+      if (!allHandlersByPriority.containsKey(method.getPriority())) {
+        allHandlersByPriority.put(method.getPriority(), new ArrayList<EventHandler<?, ?>>());
+      }
+      allHandlersByPriority.get(method.getPriority()).add(
+          new EventHandler<T, Object>(owner, method));
     }
   }
 
   public void unregister(Object owner) {
     boolean removed = false;
-    for (EventHandler<?, ?> handler : globalHandlerList) {
-      if (owner == handler.owner) {
-        handler.nullify();
-        removed = true;
+    for (List<EventHandler<?, ?>> handlerList : allHandlersByPriority.values()) {
+      for (EventHandler<?, ?> handler : handlerList) {
+        if (owner == handler.owner) {
+          handler.nullify();
+          removed = true;
+        }
       }
     }
 
@@ -116,13 +123,8 @@ public class EventBus {
       throw new IllegalArgumentException("Object was never registered: " + owner);
     }
 
-    for (Entry<Class<?>, CacheEntry> entry : handlerCache.entrySet()) {
-      CacheEntry cacheEntry = entry.getValue();
-      for (Iterator<EventHandler<?, ?>> it = cacheEntry.knownHandlers.iterator(); it.hasNext();) {
-        if (owner == it.next().owner) {
-          it.remove();
-        }
-      }
+    for (CacheEntry entry : handlerCache.values()) {
+      entry.removeHandlersForOwner(owner);
     }
   }
 
@@ -157,7 +159,48 @@ public class EventBus {
   }
 
   private class CacheEntry {
-    final List<EventHandler<?, ?>> knownHandlers = new LinkedList<EventHandler<?, ?>>();
-    int nextHandlerToCheck = 0;
+    private final SortedMap<Integer, List<EventHandler<?, ?>>> knownHandlersByPriority =
+        new TreeMap<Integer, List<EventHandler<?, ?>>>();
+    private final Map<Integer, Integer> nextHandlerToCheckByPriority =
+        new HashMap<Integer, Integer>();
+
+    void update(Object event) {
+      for (Entry<Integer, List<EventHandler<?, ?>>> entry : allHandlersByPriority.entrySet()) {
+        int priority = entry.getKey();
+        List<EventHandler<?, ?>> handlers = entry.getValue();
+        if (!knownHandlersByPriority.containsKey(priority)) {
+          knownHandlersByPriority.put(priority, new LinkedList<EventHandler<?, ?>>());
+          nextHandlerToCheckByPriority.put(priority, 0);
+        }
+        for (; nextHandlerToCheckByPriority.get(priority) < handlers.size(); increment(priority)) {
+          EventHandler<?, ?> handler = handlers.get(nextHandlerToCheckByPriority.get(priority));
+          if (handler.method.acceptsArgument(event)) {
+            knownHandlersByPriority.get(priority).add(handler);
+          }
+        }
+      }
+    }
+
+    List<EventHandler<?, ?>> getAllHandlers() {
+      List<EventHandler<?, ?>> result = new LinkedList<EventHandler<?, ?>>();
+      for (List<EventHandler<?, ?>> handlerList : knownHandlersByPriority.values()) {
+        result.addAll(handlerList);
+      }
+      return result;
+    }
+
+    void removeHandlersForOwner(Object owner) {
+      for (List<EventHandler<?, ?>> handlerList : knownHandlersByPriority.values()) {
+        for (Iterator<EventHandler<?, ?>> it = handlerList.iterator(); it.hasNext();) {
+          if (owner == it.next().owner) {
+            it.remove();
+          }
+        }
+      }
+    }
+
+    private void increment(int priority) {
+      nextHandlerToCheckByPriority.put(priority, nextHandlerToCheckByPriority.get(priority) + 1);
+    }
   }
 }

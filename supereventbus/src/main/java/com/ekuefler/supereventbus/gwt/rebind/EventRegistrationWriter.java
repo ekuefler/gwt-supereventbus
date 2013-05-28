@@ -2,6 +2,7 @@ package com.ekuefler.supereventbus.gwt.rebind;
 
 import com.ekuefler.supereventbus.shared.Subscribe;
 import com.ekuefler.supereventbus.shared.filtering.When;
+import com.ekuefler.supereventbus.shared.priority.WithPriority;
 import com.google.gwt.core.ext.typeinfo.JClassType;
 import com.google.gwt.core.ext.typeinfo.JMethod;
 import com.google.gwt.core.ext.typeinfo.JPrimitiveType;
@@ -33,6 +34,12 @@ class EventRegistrationWriter {
 
         writer.println("public boolean acceptsArgument(Object arg) {");
         writer.indentln("return arg instanceof %s;", paramType);
+        writer.println("}");
+
+        writer.println("public int getPriority() {");
+        writer.indentln("return -1*%d;", method.getAnnotation(WithPriority.class) != null
+            ? method.getAnnotation(WithPriority.class).value()
+            : 0);
         writer.println("}");
       }
       writer.outdent();

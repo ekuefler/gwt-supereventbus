@@ -10,5 +10,6 @@ import org.junit.runners.Suite;
     ExceptionTest.class,
     FilteringTest.class,
     OrderingTest.class,
-    PolymorphismTest.class})
+    PolymorphismTest.class,
+    PriorityTest.class})
 public class TestSuite {}
