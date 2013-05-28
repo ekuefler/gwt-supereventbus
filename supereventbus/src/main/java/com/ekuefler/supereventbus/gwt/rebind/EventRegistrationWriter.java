@@ -12,16 +12,16 @@ import com.google.gwt.user.rebind.SourceWriter;
 class EventRegistrationWriter {
   void writeGetMethods(JClassType target, SourceWriter writer) {
     String targetType = target.getQualifiedSourceName();
-    writer.println("public List<Method<%s, ?>> getMethods() {", targetType);
+    writer.println("public List<EventHandlerMethod<%s, ?>> getMethods() {", targetType);
     writer.indent();
-    writer.println("List<Method<%1$s, ?>> methods = new LinkedList<Method<%1$s, ?>>();",
-        targetType);
+    writer.println("List<%1$s> methods = new LinkedList<%1$s>();",
+        String.format("EventHandlerMethod<%s, ?>", targetType));
     for (JMethod method : target.getMethods()) {
       if (method.getAnnotation(Subscribe.class) == null) {
         continue;
       }
       String paramType = getFirstParameterType(method);
-      writer.println("methods.add(new Method<%s, %s>() {", targetType, paramType);
+      writer.println("methods.add(new EventHandlerMethod<%s, %s>() {", targetType, paramType);
       writer.indent();
       {
         writer.println("public void invoke(%s instance, %s arg) {", targetType, paramType);

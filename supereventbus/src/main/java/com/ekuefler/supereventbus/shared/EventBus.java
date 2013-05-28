@@ -11,12 +11,12 @@ import java.util.Queue;
 import java.util.SortedMap;
 import java.util.TreeMap;
 
-import com.ekuefler.supereventbus.shared.impl.Method;
+import com.ekuefler.supereventbus.shared.impl.EventHandlerMethod;
 import com.google.gwt.core.shared.GWT;
 
 public class EventBus {
 
-  private static final Method<Object, Object> NULL_METHOD = new Method<Object, Object>() {
+  private static final EventHandlerMethod<Object, Object> NULL_METHOD = new EventHandlerMethod<Object, Object>() {
     @Override
     public void invoke(Object instance, Object arg) {}
 
@@ -97,9 +97,9 @@ public class EventBus {
 
   public <T> void register(T owner, Class<? extends EventRegistration<T>> registrationClass) {
     EventRegistration<T> registration = GWT.create(registrationClass);
-    for (Method<T, ?> wildcardMethod : registration.getMethods()) {
+    for (EventHandlerMethod<T, ?> wildcardMethod : registration.getMethods()) {
       @SuppressWarnings("unchecked")
-      Method<T, Object> method = (Method<T, Object>) wildcardMethod;
+      EventHandlerMethod<T, Object> method = (EventHandlerMethod<T, Object>) wildcardMethod;
       if (!allHandlersByPriority.containsKey(method.getPriority())) {
         allHandlersByPriority.put(method.getPriority(), new ArrayList<EventHandler<?, ?>>());
       }
@@ -134,9 +134,9 @@ public class EventBus {
 
   private static class EventHandler<T, U> {
     T owner;
-    Method<T, U> method;
+    EventHandlerMethod<T, U> method;
 
-    EventHandler(T owner, Method<T, U> method) {
+    EventHandler(T owner, EventHandlerMethod<T, U> method) {
       this.owner = owner;
       this.method = method;
     }
@@ -144,7 +144,7 @@ public class EventBus {
     @SuppressWarnings("unchecked")
     void nullify() {
       owner = null;
-      method = (Method<T, U>) NULL_METHOD;
+      method = (EventHandlerMethod<T, U>) NULL_METHOD;
     }
   }
 
