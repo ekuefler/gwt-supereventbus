@@ -60,7 +60,8 @@ class EventRegistrationWriter {
           predicate.append("\n    && ");
         }
         first = false;
-        predicate.append(String.format("new %s().accepts(arg)", filter.getCanonicalName()));
+        predicate.append(
+            String.format("new %s().accepts(instance, arg)", filter.getCanonicalName()));
       }
     }
     return predicate.toString();

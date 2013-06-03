@@ -9,5 +9,5 @@ import java.lang.annotation.Target;
 @Inherited
 @Target(value = ElementType.METHOD)
 public @interface When {
-  Class<? extends EventFilter<?>>[] value();
+  Class<? extends EventFilter<?, ?>>[] value();
 }

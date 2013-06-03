@@ -1,5 +1,5 @@
 package com.ekuefler.supereventbus.shared.filtering;
 
-public interface EventFilter<T> {
-  boolean accepts(T event);
+public interface EventFilter<H, E> {
+  boolean accepts(H handler, E event);
 }

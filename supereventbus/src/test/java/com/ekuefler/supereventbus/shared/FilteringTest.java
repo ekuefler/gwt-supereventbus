@@ -2,28 +2,41 @@ package com.ekuefler.supereventbus.shared;
 
 import com.ekuefler.supereventbus.shared.filtering.EventFilter;
 import com.ekuefler.supereventbus.shared.filtering.When;
+import com.google.gwt.user.client.ui.HasVisibility;
+
+import java.util.LinkedList;
+import java.util.List;
 
 public class FilteringTest extends SuperEventBusTestCase {
 
-  static class IsGreaterThanTen implements EventFilter<Integer> {
+  static class IsGreaterThanTen implements EventFilter<Object, Integer> {
     @Override
-    public boolean accepts(Integer event) {
+    public boolean accepts(Object handler, Integer event) {
       return event > 10;
     }
   }
 
-  static class IsLessThanTwenty implements EventFilter<Integer> {
+  static class IsLessThanTwenty implements EventFilter<Object, Integer> {
     @Override
-    public boolean accepts(Integer event) {
+    public boolean accepts(Object handler, Integer event) {
       return event < 20;
     }
   }
 
-  static class TestOwner {
+  static class IsVisible implements EventFilter<HasVisibility, Object> {
+    @Override
+    public boolean accepts(HasVisibility handler, Object event) {
+      return handler.isVisible();
+    }
+  }
+
+  static class TestOwner implements HasVisibility {
     interface MyRegistration extends EventRegistration<TestOwner> {}
 
+    private final List<String> stringEvents = new LinkedList<String>();
     private int oneFilterValue = -1;
     private int twoFilterValue = -1;
+    private boolean visible;
 
     @Subscribe
     @When(IsGreaterThanTen.class)
@@ -35,6 +48,22 @@ public class FilteringTest extends SuperEventBusTestCase {
     @When({IsGreaterThanTen.class, IsLessThanTwenty.class})
     void handleTwoFilters(int event) {
       twoFilterValue = event;
+    }
+
+    @Subscribe
+    @When(IsVisible.class)
+    void handleStringWhenVisible(String event) {
+      stringEvents.add(event);
+    }
+
+    @Override
+    public boolean isVisible() {
+      return visible;
+    }
+
+    @Override
+    public void setVisible(boolean visible) {
+      this.visible = visible;
     }
   }
 
@@ -64,5 +93,14 @@ public class FilteringTest extends SuperEventBusTestCase {
 
     eventBus.post(25); // Too big
     assertEquals(15, owner.twoFilterValue);
+  }
+
+  public void testShouldApplyFiltersBasedOnHandler() {
+    eventBus.post("before visible");
+    owner.setVisible(true);
+    eventBus.post("after visible");
+
+    assertEquals(1, owner.stringEvents.size());
+    assertEquals("after visible", owner.stringEvents.get(0));
   }
 }
