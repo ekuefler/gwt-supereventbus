@@ -1,5 +1,8 @@
 package com.ekuefler.supereventbus.shared;
 
+import com.ekuefler.supereventbus.shared.impl.EventHandlerMethod;
+import com.google.gwt.core.shared.GWT;
+
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -10,9 +13,6 @@ import java.util.Map.Entry;
 import java.util.Queue;
 import java.util.SortedMap;
 import java.util.TreeMap;
-
-import com.ekuefler.supereventbus.shared.impl.EventHandlerMethod;
-import com.google.gwt.core.shared.GWT;
 
 public class EventBus {
 
@@ -45,8 +45,8 @@ public class EventBus {
     if (!GWT.isProdMode()) {
       addExceptionHandler(new ExceptionHandler() {
         @Override
-        public void handleException(Object event, Exception e) {
-          GWT.log("Got exception when posting event '" + event + "': " + e);
+        public void handleException(EventBusException e) {
+          GWT.log("Got exception when handling event \"" + e.getEvent() + "\"", e.getCause());
         }
       });
     }
@@ -78,17 +78,21 @@ public class EventBus {
   private <T> void dispatchQueuedEvents() {
     isDispatching = true;
     EventWithHandler<T, Object> eventWithHandler;
+    List<EventBusException> exceptions = new LinkedList<EventBusException>();
     while ((eventWithHandler = (EventWithHandler<T, Object>) eventsToDispatch.poll()) != null) {
       EventHandler<T, Object> handler = eventWithHandler.handler;
       try {
         handler.method.invoke(handler.owner, eventWithHandler.event);
       } catch (Exception e) {
-        for (ExceptionHandler exceptionHandler : exceptionHandlers) {
-          try {
-            exceptionHandler.handleException(eventWithHandler.event, e);
-          } catch (Exception ex) {
-            // Give up
-          }
+        exceptions.add(new EventBusException(e, handler.owner, eventWithHandler.event));
+      }
+    }
+    for (EventBusException e : exceptions) {
+      for (ExceptionHandler exceptionHandler : exceptionHandlers) {
+        try {
+          exceptionHandler.handleException(e);
+        } catch (Exception ex) {
+          GWT.log("Caught exception while handling an EventBusException, ignoring it", ex);
         }
       }
     }
@@ -130,6 +134,25 @@ public class EventBus {
 
   public void addExceptionHandler(ExceptionHandler exceptionHandler) {
     exceptionHandlers.add(exceptionHandler);
+  }
+
+  public static class EventBusException extends Exception {
+    private final Object source;
+    private final Object event;
+
+    EventBusException(Exception cause, Object source, Object event) {
+      super(cause);
+      this.source = source;
+      this.event = event;
+    }
+
+    public Object getEvent() {
+      return event;
+    }
+
+    public Object getSource() {
+      return source;
+    }
   }
 
   private static class EventHandler<T, U> {

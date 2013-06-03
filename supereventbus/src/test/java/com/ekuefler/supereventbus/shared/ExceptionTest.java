@@ -1,5 +1,7 @@
 package com.ekuefler.supereventbus.shared;
 
+import com.ekuefler.supereventbus.shared.EventBus.EventBusException;
+
 import java.util.LinkedList;
 import java.util.List;
 
@@ -17,7 +19,7 @@ public class ExceptionTest extends SuperEventBusTestCase {
 
     @Subscribe
     void handleString(String event) {
-      throw new UnsupportedOperationException();
+      throw new ExpectedExceptionForTest();
     }
 
     @Subscribe
@@ -50,48 +52,42 @@ public class ExceptionTest extends SuperEventBusTestCase {
   }
 
   public void testShouldAlertExceptionHandlerWhenErrorsOccur() {
-    final List<Object> events = new LinkedList<Object>();
-    final List<Exception> exceptions = new LinkedList<Exception>();
+    final List<EventBusException> exceptions = new LinkedList<EventBusException>();
     eventBus.addExceptionHandler(new ExceptionHandler() {
       @Override
-      public void handleException(Object event, Exception e) {
-        events.add(event);
+      public void handleException(EventBusException e) {
         exceptions.add(e);
       }
     });
 
     eventBus.post("string"); // Will throw an exception
 
-    assertEquals(1, events.size());
-    assertEquals("string", events.get(0));
     assertEquals(1, exceptions.size());
-    assertTrue(exceptions.get(0) instanceof UnsupportedOperationException);
+    assertEquals("string", exceptions.get(0).getEvent());
+    assertTrue(exceptions.get(0).getCause() instanceof ExpectedExceptionForTest);
   }
 
   public void testShouldAlertExceptionHandlerWhenErrorsOccurInTransitiveHandlers() {
-    final List<Object> events = new LinkedList<Object>();
-    final List<Exception> exceptions = new LinkedList<Exception>();
+    final List<EventBusException> exceptions = new LinkedList<EventBusException>();
     eventBus.addExceptionHandler(new ExceptionHandler() {
       @Override
-      public void handleException(Object event, Exception e) {
-        events.add(event);
+      public void handleException(EventBusException e) {
         exceptions.add(e);
       }
     });
 
     eventBus.post(123); // Will fire an event that will throw an exception
 
-    assertEquals(1, events.size());
-    assertEquals("string", events.get(0)); // Was fired by the handler for Integer
     assertEquals(1, exceptions.size());
-    assertTrue(exceptions.get(0) instanceof UnsupportedOperationException);
+    assertEquals("string", exceptions.get(0).getEvent()); // Was fired by the handler for Integer
+    assertTrue(exceptions.get(0).getCause() instanceof ExpectedExceptionForTest);
   }
 
   public void testShouldIgnoreExceptionsInExceptionHandlers() {
     eventBus.addExceptionHandler(new ExceptionHandler() {
       @Override
-      public void handleException(Object event, Exception e) {
-        throw new UnsupportedOperationException();
+      public void handleException(EventBusException e) {
+        throw new ExpectedExceptionForTest();
       }
     });
 
@@ -99,4 +95,6 @@ public class ExceptionTest extends SuperEventBusTestCase {
 
     // Expect no exceptions
   }
+
+  private static class ExpectedExceptionForTest extends RuntimeException {}
 }
