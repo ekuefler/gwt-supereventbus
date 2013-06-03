@@ -1,7 +1,5 @@
 package com.ekuefler.supereventbus.shared;
 
-import com.ekuefler.supereventbus.shared.EventBus.EventBusException;
-
 import java.util.LinkedList;
 import java.util.List;
 

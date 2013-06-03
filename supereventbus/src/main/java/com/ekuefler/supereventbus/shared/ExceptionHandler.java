@@ -1,7 +1,5 @@
 package com.ekuefler.supereventbus.shared;
 
-import com.ekuefler.supereventbus.shared.EventBus.EventBusException;
-
 /**
  * Marks an object as capable of handling exceptions thrown while dispatching events posted on the
  * event bus. After all handlers have had a chance to handle an event, any exceptions thrown by

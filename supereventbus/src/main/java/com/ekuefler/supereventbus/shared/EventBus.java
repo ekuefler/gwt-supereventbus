@@ -244,25 +244,6 @@ public class EventBus {
     exceptionHandlers.add(exceptionHandler);
   }
 
-  public static class EventBusException extends Exception {
-    private final Object source;
-    private final Object event;
-
-    EventBusException(Exception cause, Object source, Object event) {
-      super(cause);
-      this.source = source;
-      this.event = event;
-    }
-
-    public Object getEvent() {
-      return event;
-    }
-
-    public Object getSource() {
-      return source;
-    }
-  }
-
   private static class EventHandler<T, U> {
     T owner;
     EventHandlerMethod<T, U> method;
