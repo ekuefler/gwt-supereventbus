@@ -30,8 +30,8 @@ public interface EventHandlerMethod<I, A> {
   boolean acceptsArgument(Object arg);
 
   /**
-   * Returns the priority of this handler method. Higher-priority handlers will be invoked before
-   * lower-priority handlers.
+   * Returns a key specifying the relative order in which this method should be invoked.
+   * Lower-valued methods should be invoked before higher-valued methods.
    */
-  int getPriority();
+  int getDispatchOrder();
 }

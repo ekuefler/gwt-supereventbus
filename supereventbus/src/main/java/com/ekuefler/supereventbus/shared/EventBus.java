@@ -82,7 +82,8 @@ import java.util.TreeMap;
  */
 public class EventBus {
 
-  private static final EventHandlerMethod<Object, Object> NULL_METHOD =
+  // No-op handler method used as a sentinel when handlers are removed
+  private static final EventHandlerMethod<Object, Object> NULL_HANDLER_METHOD =
       new EventHandlerMethod<Object, Object>() {
         @Override
         public void invoke(Object instance, Object arg) {}
@@ -93,19 +94,31 @@ public class EventBus {
         }
 
         @Override
-        public int getPriority() {
+        public int getDispatchOrder() {
           return 0;
         }
       };
 
+  // Map from priority numbers to a list of all event handlers registered at that priority
   private final Map<Integer, List<EventHandler<?, ?>>> allHandlersByPriority =
       new HashMap<Integer, List<EventHandler<?, ?>>>();
-  private final Map<Class<?>, CacheEntry> handlerCache = new HashMap<Class<?>, CacheEntry>();
 
-  private final Queue<EventWithHandler<?, ?>> eventsToDispatch =
-      new LinkedList<EventWithHandler<?, ?>>();
+  // Cache of known event handlers for each event type. The cache for each event class keeps track
+  // of all handlers for that event and when the global handler list was last checked. When an event
+  // is fired, all new handlers added since the last time the event was fired are checked and added
+  // to the cache as need be. This should mean that all dispatches after the first for a given event
+  // type will be efficient so long as few new handlers were added.
+  private final Map<Class<?>, CacheEntry<?>> handlerCache = new HashMap<Class<?>, CacheEntry<?>>();
+
+  // A queue of events being dispatched. When one event fires another event, it is added to the
+  // queue rather than dispatched immediately in order to preserve the order of events.
+  private final Queue<EventWithHandler<?, ?, ?>> eventsToDispatch =
+      new LinkedList<EventWithHandler<?, ?, ?>>();
+
+  // Whether we are in the process of dispatching events
   private boolean isDispatching = false;
 
+  // List of all exception handlers registered by the user
   private final List<ExceptionHandler> exceptionHandlers = new LinkedList<ExceptionHandler>();
 
   /**
@@ -137,18 +150,28 @@ public class EventBus {
       throw new NullPointerException();
     }
 
+    // Look up the cache entry for the class of the given event, adding a new entry if this is the
+    // first time an event of the class has been fired.
     if (!handlerCache.containsKey(event.getClass())) {
-      handlerCache.put(event.getClass(), new CacheEntry());
+      handlerCache.put(event.getClass(), new CacheEntry<T>());
     }
-    CacheEntry cacheEntry = handlerCache.get(event.getClass());
+    @SuppressWarnings("unchecked")
+    CacheEntry<T> cacheEntry = (CacheEntry<T>) handlerCache.get(event.getClass());
 
+    // Updates the cache for the given event class, ensuring that it contains all registered
+    // handlers for that class. This time this takes will depend on the number of new event handlers
+    // added since the last time an event of this type was fired.
     cacheEntry.update(event);
+
+    // Queue up all handlers for this event
     for (EventHandler<?, ?> wildcardHandler : cacheEntry.getAllHandlers()) {
       @SuppressWarnings("unchecked")
-      EventHandler<T, Object> handler = (EventHandler<T, Object>) wildcardHandler;
-      eventsToDispatch.add(new EventWithHandler<T, Object>(event, handler));
+      EventHandler<Object, Object> handler = (EventHandler<Object, Object>) wildcardHandler;
+      eventsToDispatch.add(new EventWithHandler<T, Object, Object>(event, handler));
     }
 
+    // Start dispatching the queued events. If we're already dispatching, it means that the handler
+    // for one event posted another event, so we don't have to start dispatching again.
     if (!isDispatching) {
       dispatchQueuedEvents();
     }
@@ -157,26 +180,32 @@ public class EventBus {
   @SuppressWarnings("unchecked")
   private <T> void dispatchQueuedEvents() {
     isDispatching = true;
-    EventWithHandler<T, Object> eventWithHandler;
-    List<EventBusException> exceptions = new LinkedList<EventBusException>();
-    while ((eventWithHandler = (EventWithHandler<T, Object>) eventsToDispatch.poll()) != null) {
-      EventHandler<T, Object> handler = eventWithHandler.handler;
-      try {
-        handler.method.invoke(handler.owner, eventWithHandler.event);
-      } catch (Exception e) {
-        exceptions.add(new EventBusException(e, handler.owner, eventWithHandler.event));
-      }
-    }
-    for (EventBusException e : exceptions) {
-      for (ExceptionHandler exceptionHandler : exceptionHandlers) {
+    try {
+      // Dispatch all events in the queue, saving any exceptions for later
+      EventWithHandler<T, Object, Object> eventWithHandler;
+      List<EventBusException> exceptions = new LinkedList<EventBusException>();
+      while ((eventWithHandler = (EventWithHandler<T, Object, Object>) eventsToDispatch.poll()) != null) {
         try {
-          exceptionHandler.handleException(e);
-        } catch (Exception ex) {
-          GWT.log("Caught exception while handling an EventBusException, ignoring it", ex);
+          eventWithHandler.dispatch();
+        } catch (Exception e) {
+          exceptions.add(new EventBusException(
+              e, eventWithHandler.handler.owner, eventWithHandler.event));
         }
       }
+
+      // Notify all exception handlers of each exception
+      for (EventBusException e : exceptions) {
+        for (ExceptionHandler exceptionHandler : exceptionHandlers) {
+          try {
+            exceptionHandler.handleException(e);
+          } catch (Exception ex) {
+            GWT.log("Caught exception while handling an EventBusException, ignoring it", ex);
+          }
+        }
+      }
+    } finally {
+      isDispatching = false;
     }
-    isDispatching = false;
   }
 
   /**
@@ -191,20 +220,23 @@ public class EventBus {
    */
   public <T> void register(T owner, Class<? extends EventRegistration<T>> registrationClass) {
     EventRegistration<T> registration = GWT.create(registrationClass);
+
+    // Add each handler method in the class to the global handler map according to its priority. The
+    // cache mapping event classes to handler methods will be updated when an event is fired.
     for (EventHandlerMethod<T, ?> wildcardMethod : registration.getMethods()) {
       @SuppressWarnings("unchecked")
       EventHandlerMethod<T, Object> method = (EventHandlerMethod<T, Object>) wildcardMethod;
-      if (!allHandlersByPriority.containsKey(method.getPriority())) {
-        allHandlersByPriority.put(method.getPriority(), new ArrayList<EventHandler<?, ?>>());
+      if (!allHandlersByPriority.containsKey(method.getDispatchOrder())) {
+        allHandlersByPriority.put(method.getDispatchOrder(), new ArrayList<EventHandler<?, ?>>());
       }
-      allHandlersByPriority.get(method.getPriority()).add(
+      allHandlersByPriority.get(method.getDispatchOrder()).add(
           new EventHandler<T, Object>(owner, method));
     }
   }
 
   /**
-   * Unregisters all event handlers on the given object. After unregistering, {@link Subscribe}
-   * -annotated methods on that object will never be invoked when an event is posted (unless the
+   * Unregisters all event handlers on the given object. After unregistering, {@link Subscribe}-
+   * annotated methods on that object will never be invoked when an event is posted (unless the
    * object is registered again). This given object must have already been registered on the event
    * bus.
    *
@@ -213,6 +245,8 @@ public class EventBus {
    * @throws IllegalArgumentException if the given object was never registered on this event bus
    */
   public void unregister(Object owner) {
+    // First clear entries from the global handler list. We can't actually remove entries, since
+    // this would break the indices stored in the cache. So replace removed entries with no-ops.
     boolean removed = false;
     for (List<EventHandler<?, ?>> handlerList : allHandlersByPriority.values()) {
       for (EventHandler<?, ?> handler : handlerList) {
@@ -223,11 +257,13 @@ public class EventBus {
       }
     }
 
+    // Ensure that something was actually removed
     if (!removed) {
       throw new IllegalArgumentException("Object was never registered: " + owner);
     }
 
-    for (CacheEntry entry : handlerCache.values()) {
+    // Remove handlers from the cache
+    for (CacheEntry<?> entry : handlerCache.values()) {
       entry.removeHandlersForOwner(owner);
     }
   }
@@ -244,11 +280,12 @@ public class EventBus {
     exceptionHandlers.add(exceptionHandler);
   }
 
-  private static class EventHandler<T, U> {
-    T owner;
-    EventHandlerMethod<T, U> method;
+  /** A handler method combined with a specific instance of a class declaring that method. */
+  private static class EventHandler<I, A> {
+    I owner;
+    EventHandlerMethod<I, A> method;
 
-    EventHandler(T owner, EventHandlerMethod<T, U> method) {
+    EventHandler(I owner, EventHandlerMethod<I, A> method) {
       this.owner = owner;
       this.method = method;
     }
@@ -256,36 +293,62 @@ public class EventBus {
     @SuppressWarnings("unchecked")
     void nullify() {
       owner = null;
-      method = (EventHandlerMethod<T, U>) NULL_METHOD;
+      method = (EventHandlerMethod<I, A>) NULL_HANDLER_METHOD;
     }
   }
 
-  private static class EventWithHandler<T, U> {
-    final Object event;
-    final EventHandler<T, U> handler;
+  /** An event handler combined with a specific event to handle. */
+  private static class EventWithHandler<E, I, A> {
+    final E event;
+    final EventHandler<I, A> handler;
 
-    EventWithHandler(Object event, EventHandler<T, U> handler) {
+    EventWithHandler(E event, EventHandler<I, A> handler) {
       this.event = event;
       this.handler = handler;
     }
+
+    @SuppressWarnings("unchecked")
+    public void dispatch() {
+      handler.method.invoke(handler.owner, (A) event);
+    }
   }
 
-  private class CacheEntry {
-    private final SortedMap<Integer, List<EventHandler<?, ?>>> knownHandlersByPriority =
-        new TreeMap<Integer, List<EventHandler<?, ?>>>();
+  /**
+   * An entry in the handler cache for event classes, containing a list of known handlers and the
+   * index of the last handler checked.
+   */
+  private class CacheEntry<T> {
+    // Map from priority levels to a list of known event handlers for this type at that priority.
+    // The map is updated whenever an event is fired.
+    private final SortedMap<Integer, List<EventHandler<?, T>>> knownHandlersByPriority =
+        new TreeMap<Integer, List<EventHandler<?, T>>>();
+
+    // Map from priority levels to the last corresponding index in the global handler list that was
+    // checked at that priority. When updating the cache, we continue from this index in order to
+    // avoid having to re-scan entries that were already cached.
     private final Map<Integer, Integer> nextHandlerToCheckByPriority =
         new HashMap<Integer, Integer>();
 
-    void update(Object event) {
+    /** Updates this cache, ensuring it contains all handlers for the given event type. */
+    void update(T event) {
+      // Check each priority level in the global handler map
       for (Entry<Integer, List<EventHandler<?, ?>>> entry : allHandlersByPriority.entrySet()) {
         int priority = entry.getKey();
         List<EventHandler<?, ?>> handlers = entry.getValue();
+
+        // Ensure that we have entries for this priority level if we don't already
         if (!knownHandlersByPriority.containsKey(priority)) {
-          knownHandlersByPriority.put(priority, new LinkedList<EventHandler<?, ?>>());
+          knownHandlersByPriority.put(priority, new LinkedList<EventHandler<?, T>>());
           nextHandlerToCheckByPriority.put(priority, 0);
         }
+
+        // Starting with the last index we checked at this priority, advance to the end of the
+        // global handler list for this priority.
         for (; nextHandlerToCheckByPriority.get(priority) < handlers.size(); increment(priority)) {
-          EventHandler<?, ?> handler = handlers.get(nextHandlerToCheckByPriority.get(priority));
+          int nextHandlerToCheck = nextHandlerToCheckByPriority.get(priority);
+          @SuppressWarnings("unchecked")
+          EventHandler<?, T> handler = (EventHandler<?, T>) handlers.get(nextHandlerToCheck);
+          // Add this handler to the cache only if it is appropriate for the given event
           if (handler.method.acceptsArgument(event)) {
             knownHandlersByPriority.get(priority).add(handler);
           }
@@ -293,17 +356,19 @@ public class EventBus {
       }
     }
 
+    /** Returns all known handlers for this entry's event type, sorted by priority. */
     List<EventHandler<?, ?>> getAllHandlers() {
       List<EventHandler<?, ?>> result = new LinkedList<EventHandler<?, ?>>();
-      for (List<EventHandler<?, ?>> handlerList : knownHandlersByPriority.values()) {
+      for (List<EventHandler<?, T>> handlerList : knownHandlersByPriority.values()) {
         result.addAll(handlerList);
       }
       return result;
     }
 
+    /** Removes all handlers registered on the given object from this cache entry. */
     void removeHandlersForOwner(Object owner) {
-      for (List<EventHandler<?, ?>> handlerList : knownHandlersByPriority.values()) {
-        for (Iterator<EventHandler<?, ?>> it = handlerList.iterator(); it.hasNext();) {
+      for (List<EventHandler<?, T>> handlerList : knownHandlersByPriority.values()) {
+        for (Iterator<EventHandler<?, T>> it = handlerList.iterator(); it.hasNext();) {
           if (owner == it.next().owner) {
             it.remove();
           }
@@ -311,6 +376,7 @@ public class EventBus {
       }
     }
 
+    // Increments the next handler to check index for the given priority level
     private void increment(int priority) {
       nextHandlerToCheckByPriority.put(priority, nextHandlerToCheckByPriority.get(priority) + 1);
     }

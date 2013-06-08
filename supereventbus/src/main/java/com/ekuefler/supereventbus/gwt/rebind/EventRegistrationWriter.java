@@ -18,20 +18,29 @@ import com.google.gwt.user.rebind.SourceWriter;
  * @author ekuefler@google.com (Erik Kuefler)
  */
 class EventRegistrationWriter {
+
+  /**
+   * Writes the source for getMethods() the given target class to the given writer.
+   */
   void writeGetMethods(JClassType target, SourceWriter writer) {
     String targetType = target.getQualifiedSourceName();
     writer.println("public List<EventHandlerMethod<%s, ?>> getMethods() {", targetType);
     writer.indent();
     writer.println("List<%1$s> methods = new LinkedList<%1$s>();",
         String.format("EventHandlerMethod<%s, ?>", targetType));
+
+    // Iterate over each method in the target, looking for methods annotated with @Subscribe
     for (JMethod method : target.getMethods()) {
       if (method.getAnnotation(Subscribe.class) == null) {
         continue;
       }
+
+      // Add an anonymous instance of EventHandlerMethod for each method encountered
       String paramType = getFirstParameterType(method);
       writer.println("methods.add(new EventHandlerMethod<%s, %s>() {", targetType, paramType);
       writer.indent();
       {
+        // Implement invoke() by calling the method, first checking filters if provided
         writer.println("public void invoke(%s instance, %s arg) {", targetType, paramType);
         if (method.getAnnotation(When.class) != null) {
           writer.indentln("if (%s) { instance.%s(arg); }", getFilter(method), method.getName());
@@ -40,11 +49,13 @@ class EventRegistrationWriter {
         }
         writer.println("}");
 
+        // Implement acceptsArgument using instanceof
         writer.println("public boolean acceptsArgument(Object arg) {");
         writer.indentln("return arg instanceof %s;", paramType);
         writer.println("}");
 
-        writer.println("public int getPriority() {");
+        // Implement getDispatchOrder as the inverse of the method's priority
+        writer.println("public int getDispatchOrder() {");
         writer.indentln("return -1*%d;", method.getAnnotation(WithPriority.class) != null
             ? method.getAnnotation(WithPriority.class).value()
             : 0);
@@ -58,23 +69,24 @@ class EventRegistrationWriter {
     writer.println("}");
   }
 
+  // Returns a boolean expression that should be used to check whether to invoke the given event
+  // handler, based on the filters applied to it
   private String getFilter(JMethod method) {
     StringBuilder predicate = new StringBuilder();
     When annotation = method.getAnnotation(When.class);
     boolean first = true;
-    if (annotation != null) {
-      for (Class<?> filter : annotation.value()) {
-        if (!first) {
-          predicate.append("\n    && ");
-        }
-        first = false;
-        predicate.append(
-            String.format("new %s().accepts(instance, arg)", filter.getCanonicalName()));
+    for (Class<?> filter : annotation.value()) {
+      if (!first) {
+        predicate.append("\n    && ");
       }
+      first = false;
+      predicate.append(String.format(
+          "new %s().accepts(instance, arg)", filter.getCanonicalName()));
     }
     return predicate.toString();
   }
 
+  // Returns the type of the first parameter to the given method, boxed appropriately
   private String getFirstParameterType(JMethod method) {
     // If the parameter type is primitive, box it
     JType type = method.getParameterTypes()[0];
