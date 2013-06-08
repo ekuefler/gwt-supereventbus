@@ -1,9 +1,5 @@
 package com.ekuefler.supereventbus.gwt.rebind;
 
-import java.io.PrintWriter;
-import java.util.LinkedList;
-import java.util.List;
-
 import com.ekuefler.supereventbus.shared.impl.EventHandlerMethod;
 import com.google.gwt.core.ext.Generator;
 import com.google.gwt.core.ext.GeneratorContext;
@@ -16,6 +12,17 @@ import com.google.gwt.core.ext.typeinfo.TypeOracle;
 import com.google.gwt.user.rebind.ClassSourceFileComposerFactory;
 import com.google.gwt.user.rebind.SourceWriter;
 
+import java.io.PrintWriter;
+import java.util.LinkedList;
+import java.util.List;
+
+/**
+ * Generator for {@link com.ekuefler.supereventbus.shared.EventRegistration}. Takes care of the ugly
+ * parts of creating the source writer and then delegates to {@link EventRegistrationWriter}. This
+ * class is used by the GWT compiler and should not be referenced directly by users.
+ *
+ * @author ekuefler@google.com (Erik Kuefler)
+ */
 public class EventRegistrationGenerator extends Generator {
 
   @Override

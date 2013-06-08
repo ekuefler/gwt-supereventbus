@@ -9,6 +9,14 @@ import com.google.gwt.core.ext.typeinfo.JPrimitiveType;
 import com.google.gwt.core.ext.typeinfo.JType;
 import com.google.gwt.user.rebind.SourceWriter;
 
+/**
+ * Writes implementations of {@link com.ekuefler.supereventbus.shared.EventRegistration}. The
+ * generated class implements {@link com.ekuefler.supereventbus.shared.EventRegistration#getMethods}
+ * by iterating over the target class's methods and generating an anonymous handler class for each
+ * method annotated with {@link Subscribe}.
+ *
+ * @author ekuefler@google.com (Erik Kuefler)
+ */
 class EventRegistrationWriter {
   void writeGetMethods(JClassType target, SourceWriter writer) {
     String targetType = target.getQualifiedSourceName();
