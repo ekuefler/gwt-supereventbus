@@ -56,7 +56,11 @@ class EventRegistrationWriter {
         // Implement invoke() by calling the method, first checking filters if provided
         writer.println("public void invoke(%s instance, %s arg) {", targetType, paramType);
         if (method.getAnnotation(When.class) != null) {
-          writer.indentln("if (%s) { instance.%s(arg); }", getFilter(method), method.getName());
+          writer.indent();
+          writer.println("if (%s) {", getFilter(method));
+          writer.indentln("instance.%s(arg);", method.getName());
+          writer.println("}");
+          writer.outdent();
         } else {
           writer.indentln("instance.%s(arg);", method.getName());
         }
@@ -69,8 +73,8 @@ class EventRegistrationWriter {
 
         // Implement getDispatchOrder as the inverse of the method's priority
         writer.println("public int getDispatchOrder() {");
-        writer.indentln("return -1*%d;", method.getAnnotation(WithPriority.class) != null
-            ? method.getAnnotation(WithPriority.class).value()
+        writer.indentln("return %d;", method.getAnnotation(WithPriority.class) != null
+            ? -method.getAnnotation(WithPriority.class).value()
             : 0);
         writer.println("}");
       }
@@ -90,7 +94,7 @@ class EventRegistrationWriter {
     boolean first = true;
     for (Class<?> filter : annotation.value()) {
       if (!first) {
-        predicate.append("\n    && ");
+        predicate.append(" && ");
       }
       first = false;
       predicate.append(String.format(

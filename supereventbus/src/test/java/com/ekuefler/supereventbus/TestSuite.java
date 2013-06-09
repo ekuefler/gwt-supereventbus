@@ -11,7 +11,16 @@
  * or implied. See the License for the specific language governing permissions and limitations under
  * the License.
  */
-package com.ekuefler.supereventbus.shared;
+package com.ekuefler.supereventbus;
+
+import com.ekuefler.supereventbus.gwt.rebind.EventRegistrationWriterTest;
+import com.ekuefler.supereventbus.shared.BasicTest;
+import com.ekuefler.supereventbus.shared.CacheTest;
+import com.ekuefler.supereventbus.shared.ExceptionTest;
+import com.ekuefler.supereventbus.shared.FilteringTest;
+import com.ekuefler.supereventbus.shared.OrderingTest;
+import com.ekuefler.supereventbus.shared.PolymorphismTest;
+import com.ekuefler.supereventbus.shared.PriorityTest;
 
 import org.junit.runner.RunWith;
 import org.junit.runners.Suite;
@@ -20,6 +29,7 @@ import org.junit.runners.Suite;
 @Suite.SuiteClasses({
     BasicTest.class,
     CacheTest.class,
+    EventRegistrationWriterTest.class,
     ExceptionTest.class,
     FilteringTest.class,
     OrderingTest.class,
