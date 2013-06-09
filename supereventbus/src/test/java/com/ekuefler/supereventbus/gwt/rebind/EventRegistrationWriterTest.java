@@ -22,6 +22,8 @@ import com.ekuefler.supereventbus.shared.Subscribe;
 import com.ekuefler.supereventbus.shared.filtering.EventFilter;
 import com.ekuefler.supereventbus.shared.filtering.When;
 import com.ekuefler.supereventbus.shared.priority.WithPriority;
+import com.google.gwt.core.ext.TreeLogger;
+import com.google.gwt.core.ext.UnableToCompleteException;
 import com.google.gwt.core.ext.typeinfo.JClassType;
 import com.google.gwt.core.ext.typeinfo.JMethod;
 import com.google.gwt.core.ext.typeinfo.JType;
@@ -38,22 +40,25 @@ import org.mockito.MockitoAnnotations;
  */
 public class EventRegistrationWriterTest {
 
-  private StringSourceWriter writer;
   private @Mock JClassType target;
+  private @Mock TreeLogger logger;
+  private StringSourceWriter output;
+  private EventRegistrationWriter writer;
 
   @Before
   public void setUp() {
     MockitoAnnotations.initMocks(this);
-    writer = new StringSourceWriter();
+    output = new StringSourceWriter();
+    writer = new EventRegistrationWriter(logger);
   }
 
   @Test
-  public void shouldWriteBasicHandler() {
+  public void shouldWriteBasicHandler() throws Exception {
     JMethod method = newSubscribeMethod("myMethod", newEventType("MyEvent"));
     when(target.getMethods()).thenReturn(new JMethod[] {method});
     when(target.getQualifiedSourceName()).thenReturn("MyType");
 
-    new EventRegistrationWriter().writeGetMethods(target, writer);
+    writer.writeGetMethods(target, output);
 
     assertEquals(join(
         "public List<EventHandlerMethod<MyType, ?>> getMethods() {",
@@ -71,12 +76,12 @@ public class EventRegistrationWriterTest {
         "    }",
         "  });",
         "  return methods;",
-        "}"), writer.toString());
+        "}"), output.toString());
   }
 
   @Test
   @SuppressWarnings("unchecked")
-  public void shouldWriteHandlerWithFilter() {
+  public void shouldWriteHandlerWithFilter() throws Exception {
     When whenAnnotation = mock(When.class);
     when(whenAnnotation.value()).thenReturn(new Class[] {
         Filter1.class,
@@ -88,7 +93,7 @@ public class EventRegistrationWriterTest {
     when(target.getMethods()).thenReturn(new JMethod[] {method});
     when(target.getQualifiedSourceName()).thenReturn("MyType");
 
-    new EventRegistrationWriter().writeGetMethods(target, writer);
+    writer.writeGetMethods(target, output);
 
     assertContains(join(
         "    public void invoke(MyType instance, MyEvent arg) {",
@@ -97,11 +102,11 @@ public class EventRegistrationWriterTest {
             .replaceAll("%s", EventRegistrationWriterTest.class.getCanonicalName()),
         "        instance.myMethod(arg);",
         "      }",
-        "    }"), writer.toString());
+        "    }"), output.toString());
   }
 
   @Test
-  public void shouldWriteHandlerWithPriority() {
+  public void shouldWriteHandlerWithPriority() throws Exception {
     WithPriority priorityAnnotation = mock(WithPriority.class);
     when(priorityAnnotation.value()).thenReturn(123);
 
@@ -110,12 +115,56 @@ public class EventRegistrationWriterTest {
     when(target.getMethods()).thenReturn(new JMethod[] {method});
     when(target.getQualifiedSourceName()).thenReturn("MyType");
 
-    new EventRegistrationWriter().writeGetMethods(target, writer);
+    writer.writeGetMethods(target, output);
 
     assertContains(join(
         "    public int getDispatchOrder() {",
         "      return -123;",
-        "    }"), writer.toString());
+        "    }"), output.toString());
+  }
+
+  @Test(expected = UnableToCompleteException.class)
+  public void shouldFailOnSubscribeMethodWithZeroArgs() throws Exception {
+    JMethod method = mock(JMethod.class);
+    when(method.getAnnotation(Subscribe.class)).thenReturn(mock(Subscribe.class));
+    when(method.getParameterTypes()).thenReturn(new JType[] {});
+    when(target.getMethods()).thenReturn(new JMethod[] {method});
+
+    writer.writeGetMethods(target, output);
+  }
+
+  @Test(expected = UnableToCompleteException.class)
+  public void shouldFailOnSubscribeMethodWithTwoArgs() throws Exception {
+    JMethod method = mock(JMethod.class);
+    when(method.getAnnotation(Subscribe.class)).thenReturn(mock(Subscribe.class));
+    when(method.getParameterTypes()).thenReturn(new JType[] {mock(JType.class), mock(JType.class)});
+    when(target.getMethods()).thenReturn(new JMethod[] {method});
+
+    writer.writeGetMethods(target, output);
+  }
+
+  @Test(expected = UnableToCompleteException.class)
+  public void shouldFailOnPrivateSubscribeMethod() throws Exception {
+    JMethod method = mock(JMethod.class);
+    when(method.getAnnotation(Subscribe.class)).thenReturn(mock(Subscribe.class));
+    when(method.getParameterTypes()).thenReturn(new JType[] {mock(JType.class)});
+    when(method.isPrivate()).thenReturn(true);
+    when(target.getMethods()).thenReturn(new JMethod[] {method});
+
+    writer.writeGetMethods(target, output);
+  }
+
+  @SuppressWarnings("unchecked")
+  @Test(expected = UnableToCompleteException.class)
+  public void shouldFailOnFilterWithoutZeroArgConstructor() throws Exception {
+    When whenAnnotation = mock(When.class);
+    when(whenAnnotation.value()).thenReturn(new Class[] {FilterWithoutZeroArgConstructor.class});
+
+    JMethod method = newSubscribeMethod("myMethod", newEventType("MyEvent"));
+    when(method.getAnnotation(When.class)).thenReturn(whenAnnotation);
+    when(target.getMethods()).thenReturn(new JMethod[] {method});
+
+    writer.writeGetMethods(target, output);
   }
 
   private JMethod newSubscribeMethod(String name, JType paramType) {
@@ -144,14 +193,23 @@ public class EventRegistrationWriterTest {
     assertTrue(String.format("Expected <%s> in <%s>", expected, actual), actual.contains(expected));
   }
 
-  private static class Filter1 implements EventFilter<Object, Object> {
+  public static class Filter1 implements EventFilter<Object, Object> {
     @Override
     public boolean accepts(Object handler, Object event) {
       return false;
     }
   }
 
-  private static class Filter2 implements EventFilter<Object, Object> {
+  public static class Filter2 implements EventFilter<Object, Object> {
+    @Override
+    public boolean accepts(Object handler, Object event) {
+      return false;
+    }
+  }
+
+  public static class FilterWithoutZeroArgConstructor implements EventFilter<Object, Object> {
+    public FilterWithoutZeroArgConstructor(String arg) {}
+
     @Override
     public boolean accepts(Object handler, Object event) {
       return false;

@@ -16,11 +16,16 @@ package com.ekuefler.supereventbus.gwt.rebind;
 import com.ekuefler.supereventbus.shared.Subscribe;
 import com.ekuefler.supereventbus.shared.filtering.When;
 import com.ekuefler.supereventbus.shared.priority.WithPriority;
+import com.google.gwt.core.ext.TreeLogger;
+import com.google.gwt.core.ext.TreeLogger.Type;
+import com.google.gwt.core.ext.UnableToCompleteException;
 import com.google.gwt.core.ext.typeinfo.JClassType;
 import com.google.gwt.core.ext.typeinfo.JMethod;
 import com.google.gwt.core.ext.typeinfo.JPrimitiveType;
 import com.google.gwt.core.ext.typeinfo.JType;
 import com.google.gwt.user.rebind.SourceWriter;
+
+import java.lang.reflect.Constructor;
 
 /**
  * Writes implementations of {@link com.ekuefler.supereventbus.shared.EventRegistration}. The
@@ -32,10 +37,16 @@ import com.google.gwt.user.rebind.SourceWriter;
  */
 class EventRegistrationWriter {
 
+  private final TreeLogger logger;
+
+  EventRegistrationWriter(TreeLogger logger) {
+    this.logger = logger;
+  }
+
   /**
    * Writes the source for getMethods() the given target class to the given writer.
    */
-  void writeGetMethods(JClassType target, SourceWriter writer) {
+  void writeGetMethods(JClassType target, SourceWriter writer) throws UnableToCompleteException {
     String targetType = target.getQualifiedSourceName();
     writer.println("public List<EventHandlerMethod<%s, ?>> getMethods() {", targetType);
     writer.indent();
@@ -46,6 +57,19 @@ class EventRegistrationWriter {
     for (JMethod method : target.getMethods()) {
       if (method.getAnnotation(Subscribe.class) == null) {
         continue;
+      }
+
+      // Check method for validity
+      if (method.getParameterTypes().length != 1) {
+        logger.log(Type.ERROR,
+            String.format("Method %s.%s annotated with @Subscribe must take exactly one argument.",
+                target.getName(), method.getName()));
+        throw new UnableToCompleteException();
+      } else if (method.isPrivate()) {
+        logger.log(Type.ERROR,
+            String.format("Method %s.%s annotated with @Subscribe must not be private.",
+                target.getName(), method.getName()));
+        throw new UnableToCompleteException();
       }
 
       // Add an anonymous instance of EventHandlerMethod for each method encountered
@@ -88,11 +112,17 @@ class EventRegistrationWriter {
 
   // Returns a boolean expression that should be used to check whether to invoke the given event
   // handler, based on the filters applied to it
-  private String getFilter(JMethod method) {
+  private String getFilter(JMethod method) throws UnableToCompleteException {
     StringBuilder predicate = new StringBuilder();
     When annotation = method.getAnnotation(When.class);
     boolean first = true;
     for (Class<?> filter : annotation.value()) {
+      if (!classHasZeroArgConstructor(filter)) {
+        logger.log(Type.ERROR, String.format(
+            "Class %s extending EventFilter must define a public zero-argument constructor.",
+            filter.getSimpleName()));
+        throw new UnableToCompleteException();
+      }
       if (!first) {
         predicate.append(" && ");
       }
@@ -129,5 +159,18 @@ class EventRegistrationWriter {
 
     // Otherwise return the fully-qualified type name
     return type.getQualifiedSourceName();
+  }
+
+  private boolean classHasZeroArgConstructor(Class<?> clazz) {
+    try {
+      for (Constructor<?> s : clazz.getConstructors()) {
+        if (s.getParameterTypes().length == 0) {
+          return true;
+        }
+      }
+      return false;
+    } catch (SecurityException e) {
+      throw new RuntimeException(e);
+    }
   }
 }

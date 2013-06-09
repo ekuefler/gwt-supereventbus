@@ -46,7 +46,7 @@ public class EventRegistrationGenerator extends Generator {
       JClassType targetType = getTargetType(eventBinderType, context.getTypeOracle());
       SourceWriter writer = createSourceWriter(logger, context, eventBinderType, targetType);
       if (writer != null) { // Otherwise the class was already created
-        new EventRegistrationWriter().writeGetMethods(targetType, writer);
+        new EventRegistrationWriter(logger).writeGetMethods(targetType, writer);
         writer.commit(logger);
       }
       return new StringBuilder()

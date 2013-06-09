@@ -22,21 +22,21 @@ import java.util.List;
 
 public class FilteringTest extends SuperEventBusTestCase {
 
-  static class IsGreaterThanTen implements EventFilter<Object, Integer> {
+  public static class IsGreaterThanTen implements EventFilter<Object, Integer> {
     @Override
     public boolean accepts(Object handler, Integer event) {
       return event > 10;
     }
   }
 
-  static class IsLessThanTwenty implements EventFilter<Object, Integer> {
+  public static class IsLessThanTwenty implements EventFilter<Object, Integer> {
     @Override
     public boolean accepts(Object handler, Integer event) {
       return event < 20;
     }
   }
 
-  static class IsVisible implements EventFilter<HasVisibility, Object> {
+  public static class IsVisible implements EventFilter<HasVisibility, Object> {
     @Override
     public boolean accepts(HasVisibility handler, Object event) {
       return handler.isVisible();
