@@ -236,15 +236,20 @@ public class EventBus {
 
     // Add each handler method in the class to the global handler map according to its priority. The
     // cache mapping event classes to handler methods will be updated when an event is fired.
-    for (EventHandlerMethod<T, ?> wildcardMethod : registration.getMethods()) {
-      @SuppressWarnings("unchecked")
-      EventHandlerMethod<T, Object> method = (EventHandlerMethod<T, Object>) wildcardMethod;
-      if (!allHandlersByPriority.containsKey(method.getDispatchOrder())) {
-        allHandlersByPriority.put(method.getDispatchOrder(), new ArrayList<EventHandler<?, ?>>());
-      }
-      allHandlersByPriority.get(method.getDispatchOrder()).add(
-          new EventHandler<T, Object>(owner, method));
+    for (EventHandlerMethod<T, ?> method : registration.getMethods()) {
+      addHandlerMethod(owner, method);
     }
+  }
+
+  /**
+   * Registers a single handler method on a given instance. Visible for
+   * {@link EventBusAdapter#addHandler}.
+   */
+  <T, E> void addHandlerMethod(T owner, EventHandlerMethod<T, E> method) {
+    if (!allHandlersByPriority.containsKey(method.getDispatchOrder())) {
+      allHandlersByPriority.put(method.getDispatchOrder(), new ArrayList<EventHandler<?, ?>>());
+    }
+    allHandlersByPriority.get(method.getDispatchOrder()).add(new EventHandler<T, E>(owner, method));
   }
 
   /**
