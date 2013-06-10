@@ -16,6 +16,7 @@ package com.ekuefler.supereventbus;
 import com.ekuefler.supereventbus.gwt.rebind.EventRegistrationWriterTest;
 import com.ekuefler.supereventbus.shared.BasicTest;
 import com.ekuefler.supereventbus.shared.CacheTest;
+import com.ekuefler.supereventbus.shared.DeadEventTest;
 import com.ekuefler.supereventbus.shared.EventBusAdapterTest;
 import com.ekuefler.supereventbus.shared.ExceptionTest;
 import com.ekuefler.supereventbus.shared.FilteringTest;
@@ -30,6 +31,7 @@ import org.junit.runners.Suite;
 @Suite.SuiteClasses({
     BasicTest.class,
     CacheTest.class,
+    DeadEventTest.class,
     EventBusAdapterTest.class,
     EventRegistrationWriterTest.class,
     ExceptionTest.class,

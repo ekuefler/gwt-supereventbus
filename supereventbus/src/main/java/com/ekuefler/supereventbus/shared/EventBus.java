@@ -62,6 +62,10 @@ import java.util.TreeMap;
  * registered. With SuperEventBus, you can use the
  * {@link com.ekuefler.supereventbus.shared.filtering.When} annotation to conditionally disable
  * certain handlers, based on either properties of the handler or based on the event being handled.
+ *
+ * <li><b>DeadEvent</b> - in order to help identify misconfiguration issues, SuperEventBus
+ * automatically posts a {@link DeadEvent} whenever an event is fired that has no handlers. The
+ * application can subscribe to this event in order to log it or report an error.
  * </ol>
  *
  * To register handlers on the event bus, you must first declare an {@link EventRegistration}
@@ -89,7 +93,7 @@ import java.util.TreeMap;
  * eventBus.post(new MyEvent(&quot;some data&quot;));
  * </pre>
  *
- * @see Subscribe, com.ekuefler.supereventbus.shared.filtering.When,
+ * @see Subscribe, DeadEvent, com.ekuefler.supereventbus.shared.filtering.When,
  *      com.ekuefler.supereventbus.shared.priority.WithPriority
  * @author ekuefler@google.com (Erik Kuefler)
  */
@@ -177,10 +181,16 @@ public class EventBus {
     cacheEntry.update(event);
 
     // Queue up all handlers for this event
-    for (EventHandler<?, T> wildcardHandler : cacheEntry.getAllHandlers()) {
+    List<EventHandler<?, T>> handlers = cacheEntry.getAllHandlers();
+    for (EventHandler<?, T> wildcardHandler : handlers) {
       @SuppressWarnings("unchecked")
       EventHandler<Object, T> handler = (EventHandler<Object, T>) wildcardHandler;
       eventsToDispatch.add(new EventWithHandler<Object, T>(event, handler));
+    }
+
+    // If this event had no handlers, post a DeadEvent for debugging purposes
+    if (handlers.isEmpty() && !(event instanceof DeadEvent)) {
+      post(new DeadEvent(event));
     }
 
     // Start dispatching the queued events. If we're already dispatching, it means that the handler
