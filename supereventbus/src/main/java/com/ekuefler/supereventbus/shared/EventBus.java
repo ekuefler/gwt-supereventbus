@@ -125,8 +125,8 @@ public class EventBus {
 
   // A queue of events being dispatched. When one event fires another event, it is added to the
   // queue rather than dispatched immediately in order to preserve the order of events.
-  private final Queue<EventWithHandler<?, ?, ?>> eventsToDispatch =
-      new LinkedList<EventWithHandler<?, ?, ?>>();
+  private final Queue<EventWithHandler<?, ?>> eventsToDispatch =
+      new LinkedList<EventWithHandler<?, ?>>();
 
   // Whether we are in the process of dispatching events
   private boolean isDispatching = false;
@@ -177,10 +177,10 @@ public class EventBus {
     cacheEntry.update(event);
 
     // Queue up all handlers for this event
-    for (EventHandler<?, ?> wildcardHandler : cacheEntry.getAllHandlers()) {
+    for (EventHandler<?, T> wildcardHandler : cacheEntry.getAllHandlers()) {
       @SuppressWarnings("unchecked")
-      EventHandler<Object, Object> handler = (EventHandler<Object, Object>) wildcardHandler;
-      eventsToDispatch.add(new EventWithHandler<T, Object, Object>(event, handler));
+      EventHandler<Object, T> handler = (EventHandler<Object, T>) wildcardHandler;
+      eventsToDispatch.add(new EventWithHandler<Object, T>(event, handler));
     }
 
     // Start dispatching the queued events. If we're already dispatching, it means that the handler
@@ -195,9 +195,9 @@ public class EventBus {
     isDispatching = true;
     try {
       // Dispatch all events in the queue, saving any exceptions for later
-      EventWithHandler<T, Object, Object> eventWithHandler;
+      EventWithHandler<Object, T> eventWithHandler;
       List<EventBusException> exceptions = new LinkedList<EventBusException>();
-      while ((eventWithHandler = (EventWithHandler<T, Object, Object>) eventsToDispatch.poll()) != null) {
+      while ((eventWithHandler = (EventWithHandler<Object, T>) eventsToDispatch.poll()) != null) {
         try {
           eventWithHandler.dispatch();
         } catch (Exception e) {
@@ -316,18 +316,17 @@ public class EventBus {
   }
 
   /** An event handler combined with a specific event to handle. */
-  private static class EventWithHandler<E, I, A> {
-    final E event;
+  private static class EventWithHandler<I, A> {
+    final A event;
     final EventHandler<I, A> handler;
 
-    EventWithHandler(E event, EventHandler<I, A> handler) {
+    EventWithHandler(A event, EventHandler<I, A> handler) {
       this.event = event;
       this.handler = handler;
     }
 
-    @SuppressWarnings("unchecked")
-    public void dispatch() {
-      handler.method.invoke(handler.owner, (A) event);
+    void dispatch() {
+      handler.method.invoke(handler.owner, event);
     }
   }
 
@@ -375,8 +374,8 @@ public class EventBus {
     }
 
     /** Returns all known handlers for this entry's event type, sorted by priority. */
-    List<EventHandler<?, ?>> getAllHandlers() {
-      List<EventHandler<?, ?>> result = new LinkedList<EventHandler<?, ?>>();
+    List<EventHandler<?, T>> getAllHandlers() {
+      List<EventHandler<?, T>> result = new LinkedList<EventHandler<?, T>>();
       for (List<EventHandler<?, T>> handlerList : knownHandlersByPriority.values()) {
         result.addAll(handlerList);
       }
