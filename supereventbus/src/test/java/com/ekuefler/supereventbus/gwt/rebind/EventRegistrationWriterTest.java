@@ -21,11 +21,14 @@ import static org.mockito.Mockito.when;
 import com.ekuefler.supereventbus.shared.Subscribe;
 import com.ekuefler.supereventbus.shared.filtering.EventFilter;
 import com.ekuefler.supereventbus.shared.filtering.When;
+import com.ekuefler.supereventbus.shared.multievent.EventTypes;
+import com.ekuefler.supereventbus.shared.multievent.MultiEvent;
 import com.ekuefler.supereventbus.shared.priority.WithPriority;
 import com.google.gwt.core.ext.TreeLogger;
 import com.google.gwt.core.ext.UnableToCompleteException;
 import com.google.gwt.core.ext.typeinfo.JClassType;
 import com.google.gwt.core.ext.typeinfo.JMethod;
+import com.google.gwt.core.ext.typeinfo.JParameter;
 import com.google.gwt.core.ext.typeinfo.JType;
 import com.google.gwt.user.rebind.StringSourceWriter;
 
@@ -98,10 +101,8 @@ public class EventRegistrationWriterTest {
     assertContains(join(
         "    public void invoke(MyType instance, MyEvent arg) {",
         ("      if (new %s.Filter1().accepts(instance, arg) "
-            + "&& new %s.Filter2().accepts(instance, arg)) {")
+            + "&& new %s.Filter2().accepts(instance, arg)) { instance.myMethod(arg); }")
             .replaceAll("%s", EventRegistrationWriterTest.class.getCanonicalName()),
-        "        instance.myMethod(arg);",
-        "      }",
         "    }"), output.toString());
   }
 
@@ -120,6 +121,39 @@ public class EventRegistrationWriterTest {
     assertContains(join(
         "    public int getDispatchOrder() {",
         "      return -123;",
+        "    }"), output.toString());
+  }
+
+  @Test
+  public void shouldWriteMultiEventHandlers() throws Exception {
+    JParameter param = mock(JParameter.class);
+    EventTypes typeAnnotation = mock(EventTypes.class);
+    when(typeAnnotation.value()).thenReturn(new Class<?>[] {String.class, Integer.class});
+    when(param.getAnnotation(EventTypes.class)).thenReturn(typeAnnotation);
+
+    JMethod method = newSubscribeMethod(
+        "myMethod", newEventType(MultiEvent.class.getCanonicalName()));
+    when(method.getParameters()).thenReturn(new JParameter[] {param});
+    when(target.getMethods()).thenReturn(new JMethod[] {method});
+    when(target.getQualifiedSourceName()).thenReturn("MyType");
+
+    writer.writeGetMethods(target, output);
+
+    assertContains(join(
+        "  methods.add(new EventHandlerMethod<MyType, java.lang.String>() {",
+        "    public void invoke(MyType instance, java.lang.String arg) {",
+        "      instance.myMethod(new MultiEvent(arg));",
+        "    }",
+        "    public boolean acceptsArgument(Object arg) {",
+        "      return arg instanceof java.lang.String;",
+        "    }"), output.toString());
+    assertContains(join(
+        "  methods.add(new EventHandlerMethod<MyType, java.lang.Integer>() {",
+        "    public void invoke(MyType instance, java.lang.Integer arg) {",
+        "      instance.myMethod(new MultiEvent(arg));",
+        "    }",
+        "    public boolean acceptsArgument(Object arg) {",
+        "      return arg instanceof java.lang.Integer;",
         "    }"), output.toString());
   }
 
@@ -167,11 +201,51 @@ public class EventRegistrationWriterTest {
     writer.writeGetMethods(target, output);
   }
 
+  @Test(expected = UnableToCompleteException.class)
+  public void shouldFailOnMultiEventWithoutTypes() throws Exception {
+    JParameter param = mock(JParameter.class);
+    when(param.getAnnotation(EventTypes.class)).thenReturn(null);
+
+    JMethod method = newSubscribeMethod(
+        "myMethod", newEventType(MultiEvent.class.getCanonicalName()));
+    when(method.getParameters()).thenReturn(new JParameter[] {param});
+    when(target.getMethods()).thenReturn(new JMethod[] {method});
+
+    writer.writeGetMethods(target, output);
+  }
+
+  @Test(expected = UnableToCompleteException.class)
+  public void shouldFailOnNonMultiEventWithTypes() throws Exception {
+    JParameter param = mock(JParameter.class);
+    when(param.getAnnotation(EventTypes.class)).thenReturn(mock(EventTypes.class));
+
+    JMethod method = newSubscribeMethod("myMethod", newEventType("MyEvent"));
+    when(method.getParameters()).thenReturn(new JParameter[] {param});
+    when(target.getMethods()).thenReturn(new JMethod[] {method});
+
+    writer.writeGetMethods(target, output);
+  }
+
+  @Test(expected = UnableToCompleteException.class)
+  public void shouldFailOnRedundantMultiEventTypes() throws Exception {
+    JParameter param = mock(JParameter.class);
+    EventTypes typeAnnotation = mock(EventTypes.class);
+    when(typeAnnotation.value()).thenReturn(new Class<?>[] {String.class, Object.class});
+    when(param.getAnnotation(EventTypes.class)).thenReturn(typeAnnotation);
+
+    JMethod method = newSubscribeMethod("myMethod", newEventType("MyEvent"));
+    when(method.getParameters()).thenReturn(new JParameter[] {param});
+    when(target.getMethods()).thenReturn(new JMethod[] {method});
+
+    writer.writeGetMethods(target, output);
+  }
+
   private JMethod newSubscribeMethod(String name, JType paramType) {
     JMethod method = mock(JMethod.class);
     when(method.getName()).thenReturn(name);
     when(method.getAnnotation(Subscribe.class)).thenReturn(mock(Subscribe.class));
     when(method.getParameterTypes()).thenReturn(new JType[] {paramType});
+    when(method.getParameters()).thenReturn(new JParameter[] {mock(JParameter.class)});
     return method;
   }
 

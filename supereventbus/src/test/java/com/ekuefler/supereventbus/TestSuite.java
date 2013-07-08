@@ -20,6 +20,7 @@ import com.ekuefler.supereventbus.shared.DeadEventTest;
 import com.ekuefler.supereventbus.shared.EventBusAdapterTest;
 import com.ekuefler.supereventbus.shared.ExceptionTest;
 import com.ekuefler.supereventbus.shared.FilteringTest;
+import com.ekuefler.supereventbus.shared.MultiEventTest;
 import com.ekuefler.supereventbus.shared.OrderingTest;
 import com.ekuefler.supereventbus.shared.PolymorphismTest;
 import com.ekuefler.supereventbus.shared.PriorityTest;
@@ -36,6 +37,7 @@ import org.junit.runners.Suite;
     EventRegistrationWriterTest.class,
     ExceptionTest.class,
     FilteringTest.class,
+    MultiEventTest.class,
     OrderingTest.class,
     PolymorphismTest.class,
     PriorityTest.class})

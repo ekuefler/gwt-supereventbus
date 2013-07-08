@@ -14,6 +14,7 @@
 package com.ekuefler.supereventbus.gwt.rebind;
 
 import com.ekuefler.supereventbus.shared.impl.EventHandlerMethod;
+import com.ekuefler.supereventbus.shared.multievent.MultiEvent;
 import com.google.gwt.core.ext.Generator;
 import com.google.gwt.core.ext.GeneratorContext;
 import com.google.gwt.core.ext.TreeLogger;
@@ -73,9 +74,10 @@ public class EventRegistrationGenerator extends Generator {
         packageName, simpleName);
 
     composer.addImplementedInterface(eventBinderType.getName());
+    composer.addImport(EventHandlerMethod.class.getCanonicalName());
     composer.addImport(LinkedList.class.getCanonicalName());
     composer.addImport(List.class.getCanonicalName());
-    composer.addImport(EventHandlerMethod.class.getCanonicalName());
+    composer.addImport(MultiEvent.class.getCanonicalName());
 
     PrintWriter printWriter = context.tryCreate(logger, packageName, simpleName);
     return printWriter != null ? composer.createSourceWriter(context, printWriter) : null;

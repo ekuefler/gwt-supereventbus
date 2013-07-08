@@ -14,6 +14,7 @@
 package com.ekuefler.supereventbus.shared;
 
 import com.ekuefler.supereventbus.shared.impl.EventHandlerMethod;
+import com.ekuefler.supereventbus.shared.multievent.MultiEvent;
 import com.google.gwt.core.shared.GWT;
 
 import java.util.ArrayList;
@@ -45,7 +46,8 @@ import java.util.TreeMap;
  * polymorphically, so a handler for MyEvent would see any subclass of MyEvent. This allows you to
  * define hierarchies of events and handle them together, define tagging interfaces to mark groups
  * of events that should be handled in the same way, or event define a handle for {@link Object} to
- * handle all events fired by the system.
+ * handle all events fired by the system. It is also possible to handle multiple events of unrelated
+ * types with the same handler method (see below).
  *
  * <li><b>Better-behaved event dispatch</b> - Using the GWT event bus, firing an event from another
  * event handler will cause that new event to be processed before processing of the original event
@@ -62,6 +64,13 @@ import java.util.TreeMap;
  * registered. With SuperEventBus, you can use the
  * {@link com.ekuefler.supereventbus.shared.filtering.When} annotation to conditionally disable
  * certain handlers, based on either properties of the handler or based on the event being handled.
+ *
+ * <li><b>Handling events with unrelated types</b> - Standard polymorphism is usually powerful
+ * enough to express event handlers that should work on multiple types of events, but occasionally
+ * it is necessary to handle multiple events of unrelated types using the same method. SuperEventBus
+ * allows this via the {@link MultiEvent} class and
+ * {@link com.ekuefler.supereventbus.shared.multievent.EventTypes;} annotation, which allow events
+ * of several specified types to be wrapped and passed to a single method.
  *
  * <li><b>DeadEvent</b> - in order to help identify misconfiguration issues, SuperEventBus
  * automatically posts a {@link DeadEvent} whenever an event is fired that has no handlers. The
@@ -94,7 +103,7 @@ import java.util.TreeMap;
  * </pre>
  *
  * @see Subscribe, DeadEvent, com.ekuefler.supereventbus.shared.filtering.When,
- *      com.ekuefler.supereventbus.shared.priority.WithPriority
+ *      com.ekuefler.supereventbus.shared.priority.WithPriority, MultiEvent
  * @author ekuefler@google.com (Erik Kuefler)
  */
 public class EventBus {
@@ -163,8 +172,11 @@ public class EventBus {
    * @param event event object to post to all handlers
    */
   public <T> void post(T event) {
+    // Check argument validity
     if (event == null) {
       throw new NullPointerException();
+    } else if (event instanceof MultiEvent) {
+      throw new IllegalArgumentException("MultiEvents cannot be posted directly");
     }
 
     // Look up the cache entry for the class of the given event, adding a new entry if this is the

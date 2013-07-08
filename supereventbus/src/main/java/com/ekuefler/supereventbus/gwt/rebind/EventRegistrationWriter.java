@@ -15,6 +15,8 @@ package com.ekuefler.supereventbus.gwt.rebind;
 
 import com.ekuefler.supereventbus.shared.Subscribe;
 import com.ekuefler.supereventbus.shared.filtering.When;
+import com.ekuefler.supereventbus.shared.multievent.EventTypes;
+import com.ekuefler.supereventbus.shared.multievent.MultiEvent;
 import com.ekuefler.supereventbus.shared.priority.WithPriority;
 import com.google.gwt.core.ext.TreeLogger;
 import com.google.gwt.core.ext.TreeLogger.Type;
@@ -26,6 +28,8 @@ import com.google.gwt.core.ext.typeinfo.JType;
 import com.google.gwt.user.rebind.SourceWriter;
 
 import java.lang.reflect.Constructor;
+import java.util.LinkedList;
+import java.util.List;
 
 /**
  * Writes implementations of {@link com.ekuefler.supereventbus.shared.EventRegistration}. The
@@ -50,6 +54,8 @@ class EventRegistrationWriter {
     String targetType = target.getQualifiedSourceName();
     writer.println("public List<EventHandlerMethod<%s, ?>> getMethods() {", targetType);
     writer.indent();
+
+    // Write a list that we will add all handlers to before returning
     writer.println("List<%1$s> methods = new LinkedList<%1$s>();",
         String.format("EventHandlerMethod<%s, ?>", targetType));
 
@@ -58,56 +64,109 @@ class EventRegistrationWriter {
       if (method.getAnnotation(Subscribe.class) == null) {
         continue;
       }
+      checkValidity(target, method);
 
-      // Check method for validity
-      if (method.getParameterTypes().length != 1) {
-        logger.log(Type.ERROR,
-            String.format("Method %s.%s annotated with @Subscribe must take exactly one argument.",
-                target.getName(), method.getName()));
-        throw new UnableToCompleteException();
-      } else if (method.isPrivate()) {
-        logger.log(Type.ERROR,
-            String.format("Method %s.%s annotated with @Subscribe must not be private.",
-                target.getName(), method.getName()));
-        throw new UnableToCompleteException();
-      }
-
-      // Add an anonymous instance of EventHandlerMethod for each method encountered
-      String paramType = getFirstParameterType(method);
-      writer.println("methods.add(new EventHandlerMethod<%s, %s>() {", targetType, paramType);
-      writer.indent();
-      {
-        // Implement invoke() by calling the method, first checking filters if provided
-        writer.println("public void invoke(%s instance, %s arg) {", targetType, paramType);
-        if (method.getAnnotation(When.class) != null) {
-          writer.indent();
-          writer.println("if (%s) {", getFilter(method));
-          writer.indentln("instance.%s(arg);", method.getName());
-          writer.println("}");
-          writer.outdent();
-        } else {
-          writer.indentln("instance.%s(arg);", method.getName());
+      // Generate a list of types that should be handled by this method. Normally, this is a single
+      // type equal to the method's first argument. If the argument in a MultiEvent, this list of
+      // types comes from the @EventTypes annotation on the parameter.
+      final List<String> paramTypes = new LinkedList<String>();
+      final boolean isMultiEvent;
+      if (getFirstParameterType(method).equals(MultiEvent.class.getCanonicalName())) {
+        isMultiEvent = true;
+        for (Class<?> type : method.getParameters()[0].getAnnotation(EventTypes.class).value()) {
+          paramTypes.add(type.getCanonicalName());
         }
-        writer.println("}");
-
-        // Implement acceptsArgument using instanceof
-        writer.println("public boolean acceptsArgument(Object arg) {");
-        writer.indentln("return arg instanceof %s;", paramType);
-        writer.println("}");
-
-        // Implement getDispatchOrder as the inverse of the method's priority
-        writer.println("public int getDispatchOrder() {");
-        writer.indentln("return %d;", method.getAnnotation(WithPriority.class) != null
-            ? -method.getAnnotation(WithPriority.class).value()
-            : 0);
-        writer.println("}");
+      } else {
+        isMultiEvent = false;
+        paramTypes.add(getFirstParameterType(method));
       }
-      writer.outdent();
-      writer.println("});");
+
+      // Add an implementation of EventHandlerMethod to the list for each type this method handles
+      for (String paramType : paramTypes) {
+        writer.println("methods.add(new EventHandlerMethod<%s, %s>() {", targetType, paramType);
+        writer.indent();
+        {
+          // Implement invoke() by calling the method, first checking filters if provided
+          writer.println("public void invoke(%s instance, %s arg) {", targetType, paramType);
+          String invocation = String.format(
+              isMultiEvent ? "instance.%s(new MultiEvent(arg));" : "instance.%s(arg);",
+              method.getName());
+          if (method.getAnnotation(When.class) != null) {
+            writer.indentln("if (%s) { %s }", getFilter(method), invocation);
+          } else {
+            writer.indentln(invocation);
+          }
+          writer.println("}");
+
+          // Implement acceptsArgument using instanceof
+          writer.println("public boolean acceptsArgument(Object arg) {");
+          writer.indentln("return arg instanceof %s;", paramType);
+          writer.println("}");
+
+          // Implement getDispatchOrder as the inverse of the method's priority
+          writer.println("public int getDispatchOrder() {");
+          writer.indentln("return %d;", method.getAnnotation(WithPriority.class) != null
+              ? -method.getAnnotation(WithPriority.class).value()
+              : 0);
+          writer.println("}");
+        }
+        writer.outdent();
+        writer.println("});");
+      }
     }
+
+    // Return the list of EventHandlerMethods
     writer.println("return methods;");
     writer.outdent();
     writer.println("}");
+  }
+
+  private void checkValidity(JClassType target, JMethod method) throws UnableToCompleteException {
+    // General checks for all methods annotated with @Subscribe
+    if (method.getParameterTypes().length != 1) {
+      logger.log(Type.ERROR,
+          String.format("Method %s.%s annotated with @Subscribe must take exactly one argument.",
+              target.getName(), method.getName()));
+      throw new UnableToCompleteException();
+    } else if (method.isPrivate()) {
+      logger.log(Type.ERROR,
+          String.format("Method %s.%s annotated with @Subscribe must not be private.",
+              target.getName(), method.getName()));
+      throw new UnableToCompleteException();
+    }
+
+    if (method.getParameterTypes()[0].getQualifiedSourceName().equals(
+        MultiEvent.class.getCanonicalName())) {
+      // Checks specific to MultiEvents
+      if (method.getParameters()[0].getAnnotation(EventTypes.class) == null) {
+        logger.log(Type.ERROR,
+            String.format("MultiEvent in method %s.%s must be annotated with @EventTypes.",
+                target.getName(), method.getName()));
+        throw new UnableToCompleteException();
+      }
+
+      // Ensure that no type is assignable to another type
+      Class<?>[] classes = method.getParameters()[0].getAnnotation(EventTypes.class).value();
+      for (Class<?> c1 : classes) {
+        for (Class<?> c2 : classes) {
+          if (c1 != c2 && c1.isAssignableFrom(c2)) {
+            logger.log(Type.ERROR,
+                String.format("The type %s is redundant with the type %s in method %s.%s.",
+                    c2.getSimpleName(), c1.getSimpleName(), target.getName(), method.getName()));
+            throw new UnableToCompleteException();
+          }
+        }
+      }
+    } else {
+      // Checks for non-MultiEvents
+      if (method.getParameters()[0].getAnnotation(EventTypes.class) != null) {
+        logger.log(Type.ERROR,
+            String.format(
+                "@EventTypes must not be applied to a non-MultiEvent parameter in method %s.%s.",
+                target.getName(), method.getName()));
+        throw new UnableToCompleteException();
+      }
+    }
   }
 
   // Returns a boolean expression that should be used to check whether to invoke the given event
