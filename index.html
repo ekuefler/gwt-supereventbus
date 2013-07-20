@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html>
+
+  <head>
+    <meta charset='utf-8' />
+    <meta http-equiv="X-UA-Compatible" content="chrome=1" />
+    <meta name="description" content="SuperEventBus : High-octane event bus for GWT" />
+
+    <link rel="stylesheet" type="text/css" media="screen" href="stylesheets/stylesheet.css">
+
+    <title>SuperEventBus</title>
+  </head>
+
+  <body>
+
+    <!-- HEADER -->
+    <div id="header_wrap" class="outer">
+        <header class="inner">
+          <a id="forkme_banner" href="https://github.com/ekuefler/gwt-supereventbus">View on GitHub</a>
+
+          <h1 id="project_title">SuperEventBus</h1>
+          <h2 id="project_tagline">High-octane event bus for GWT</h2>
+
+            <section id="downloads">
+              <a class="zip_download_link" href="https://github.com/ekuefler/gwt-supereventbus/zipball/master">Download this project as a .zip file</a>
+              <a class="tar_download_link" href="https://github.com/ekuefler/gwt-supereventbus/tarball/master">Download this project as a tar.gz file</a>
+            </section>
+        </header>
+    </div>
+
+    <!-- MAIN CONTENT -->
+    <div id="main_content_wrap" class="outer">
+      <section id="main_content" class="inner">
+        <h1>
+<a name="what-is-supereventbus" class="anchor" href="#what-is-supereventbus"><span class="octicon octicon-link"></span></a>What is SuperEventBus?</h1>
+
+<p>SuperEventBus is a high-powered event bus for GWT. It is a replacement for the
+built-in com.google.web.bindery.event.shared.EventBus.</p>
+
+<p>SuperEventBus is currently an <em>experimental</em> API that is subject to change.
+Please leave feedback and feature requests in the <a href="TODO">issue tracker</a>!</p>
+
+<h1>
+<a name="why-do-i-need-a-new-event-bus" class="anchor" href="#why-do-i-need-a-new-event-bus"><span class="octicon octicon-link"></span></a>Why do I need a new event bus?</h1>
+
+<p>GWT's event bus is a great way to make your application more maintainable by
+decoupling components from one another, allowing you to work on one without
+affecting the others. However, the built-in event bus has several limitations.
+Specifically,</p>
+
+<ul>
+<li>It's <em>inflexible</em>. All events in GWT's event system must extend an <code>Event</code>
+class, requiring you to define a new event for any kind of data that must be
+posted on the event bus. Like Guava's event bus, SuperEventBus allows you to
+post any type of event, allowing you to do things like update model objects
+by posting them directly on the bus. Handlers in GWT's event bus are also
+always active when registered - SuperEventBus allows you to define filters
+that can prevent events from being handled in certain situations (say, when
+the component is not visible.)</li>
+<li>It's <em>verbose</em>. Extending <code>Event</code> requires implementing several boilerplate
+methods, and registering handlers usually requires creating clunky anonymous
+classes. SuperEventBus again takes inspiration from Guava, allowing you to
+annotate existing methods with the <code>@Subscribe</code> annotation to cause them to
+be automatically registered as event handlers.</li>
+<li>It's <em>monomorphic</em>. A handler registered for a given event type will only hear
+instances of that exact type and none of its subtypes. This requires you to
+register redundant handlers for events that should be handled in similar ways.
+In contrast, SuperEventBus's handlers a fully polymorphic, so a handler for a
+given type will be invoked whenever any subtype of that event is posted. This
+lets you do powerful things, like defining tagging interfaces for events that
+share properties that should be handled in the same way, or even registering a
+handler for <code>Object</code> that will receive every event in the system. When just a
+single polymorphic type still isn't enough, SuperEventBus also allows the use
+of MultiEvents to handle many events with unrelated types using a single
+handler method.</li>
+<li>It's <em>unpredictable</em>. GWT's event bus dispatches events using a stack, so that
+when one event fires another event it can be impossible to tell which order
+other handlers will see those events in. There is also no way to tell GWT that
+certain handlers should always be invoked before or after other handlers.
+SuperEventBus uses a queue that guarantees events will always be handled in
+the same order in which they're fired, and allows you to specify priorities
+for handlers to affect the order in which they are invoked.</li>
+</ul><p>SuperEventBus addresses all of these problems and more, providing a more powerful
+event bus that is easier to use.</p>
+
+<h1>
+<a name="how-do-i-use-supereventbus" class="anchor" href="#how-do-i-use-supereventbus"><span class="octicon octicon-link"></span></a>How do I use SuperEventBus?</h1>
+
+<p>SuperEventBus uses a simple annotation-based interface inspired by <a href="https://code.google.com/p/guava-libraries/wiki/EventBusExplained">Guava's event
+bus</a>. To define a handler method, just annotate a non-private method that 
+takes a single argument with the <code>@Subscribe</code> annotation like this:</p>
+
+<div class="highlight"><pre><span class="nd">@Subscribe</span>
+<span class="kt">void</span> <span class="nf">handleString</span><span class="o">(</span><span class="n">String</span> <span class="n">event</span><span class="o">)</span> <span class="o">{</span>
+  <span class="n">Window</span><span class="o">.</span><span class="na">alert</span><span class="o">(</span><span class="s">"The string "</span> <span class="o">+</span> <span class="n">event</span> <span class="o">+</span> <span class="s">" was posted on the event bus."</span><span class="o">);</span>
+<span class="o">}</span>
+</pre></div>
+
+<p>A class may contain any number of methods annotated with <code>@Subscribe</code>. In order
+to active them, the class must first declare an event registration interface for
+the class:</p>
+
+<div class="highlight"><pre><span class="kd">interface</span> <span class="nc">MyRegistration</span> <span class="kd">extends</span> <span class="n">EventRegistration</span><span class="o">&lt;</span><span class="n">MyClass</span><span class="o">&gt;</span> <span class="o">{}</span>
+</pre></div>
+
+<p>Then, the class just needs to register itself with an instance of the event bus
+(this is usually done in the constructor of the class):</p>
+
+<div class="highlight"><pre><span class="n">eventBus</span><span class="o">.</span><span class="na">register</span><span class="o">(</span><span class="k">this</span><span class="o">,</span> <span class="n">MyRegistration</span><span class="o">.</span><span class="na">class</span><span class="o">);</span>
+</pre></div>
+
+<p>Once registered, <code>handleString</code> will be invoked whenever a <code>String</code> is posted on
+the event bus, which is done like this:</p>
+
+<div class="highlight"><pre><span class="n">eventBus</span><span class="o">.</span><span class="na">post</span><span class="o">(</span><span class="s">"some string"</span><span class="o">);</span>
+</pre></div>
+
+<p>Of course, you aren't restricted to posting strings: handler methods can be
+defined for any type and any type can be passed to <code>post</code>. In practice, most
+users will define their own event types rather than posting existing types
+directly.</p>
+
+<h1>
+<a name="what-else-can-it-do" class="anchor" href="#what-else-can-it-do"><span class="octicon octicon-link"></span></a>What else can it do?</h1>
+
+<p>SuperEventBus contains several advanced features that have no analogue in GWT's
+built-in event bus. It's easy to get started with SuperEventBus without these
+features, and explore them later as needed.</p>
+
+<h3>
+<a name="priorities" class="anchor" href="#priorities"><span class="octicon octicon-link"></span></a>Priorities</h3>
+
+<p>In addition to <code>@Subscribe</code>, handler methods can also be annotated with the
+<code>@WithPriority</code> annotation, which takes a single integer. Handlers with higher
+priorities are always invoked before handlers with lower priorities. Handlers
+without the <code>@WithPriority</code> annotation are given priority 0, and negative
+priorities are allowed. See the <a href="TODO">javadoc</a> for more details.</p>
+
+<h3>
+<a name="filters" class="anchor" href="#filters"><span class="octicon octicon-link"></span></a>Filters</h3>
+
+<p>Handler methods can also be annotated with the <code>@When</code> annotation, which takes
+a filter class and causes that handler to be ignored when the filter returns
+false. Filter classes extend <code>EventFilter</code> and look like this:</p>
+
+<div class="highlight"><pre><span class="kd">class</span> <span class="nc">IsVisible</span> <span class="kd">implements</span> <span class="n">EventFilter</span><span class="o">&lt;</span><span class="n">HasVisibility</span><span class="o">,</span> <span class="n">Object</span><span class="o">&gt;</span> <span class="o">{</span>
+  <span class="nd">@Override</span>
+  <span class="kd">public</span> <span class="kt">boolean</span> <span class="nf">accepts</span><span class="o">(</span><span class="n">HasVisibility</span> <span class="n">handler</span><span class="o">,</span> <span class="n">Object</span> <span class="n">event</span><span class="o">)</span> <span class="o">{</span>
+    <span class="k">return</span> <span class="n">handler</span><span class="o">.</span><span class="na">isVisible</span><span class="o">();</span>
+  <span class="o">}</span>
+<span class="o">}</span>
+</pre></div>
+
+<p>A handler annotated with <code>@When(IsVisible.class)</code> would be invoked only if its
+containing class was visible at the time the event was posted. Note that the
+filter accepts both the handler class as well as the event, so it is possible
+to filter based on the properties of either. See the <a href="TODO">javadoc</a> for more
+details.</p>
+
+<h3>
+<a name="multievents" class="anchor" href="#multievents"><span class="octicon octicon-link"></span></a>MultiEvents</h3>
+
+<p>Since EventBus is polymorphic, it is usually possible to handle many types of
+events by defining a handler for a common base class of those events. However,
+sometimes it is necessary to handle multiple events of unrelated types. This
+can be accomplished by declaring a handler with a paramter of type <code>MultiEvent</code>
+and annotating it with <code>EventTypes</code> as follows:</p>
+
+<div class="highlight"><pre><span class="nd">@Subscribe</span>
+<span class="kt">void</span> <span class="nf">handleMultipleTypes</span><span class="o">(</span><span class="nd">@EventTypes</span><span class="o">({</span><span class="n">String</span><span class="o">.</span><span class="na">class</span><span class="o">,</span> <span class="n">Double</span><span class="o">.</span><span class="na">class</span><span class="o">})</span> <span class="n">MultiEvent</span> <span class="n">event</span><span class="o">)</span> <span class="o">{</span>
+  <span class="k">if</span> <span class="o">(</span><span class="n">event</span> <span class="k">instanceof</span> <span class="n">String</span><span class="o">)</span> <span class="o">{</span>
+    <span class="n">Window</span><span class="o">.</span><span class="na">alert</span><span class="o">(</span><span class="s">"Got a string: "</span> <span class="o">+</span> <span class="n">event</span><span class="o">.</span><span class="na">getEvent</span><span class="o">());</span>
+  <span class="o">}</span> <span class="k">else</span> <span class="k">if</span> <span class="o">(</span><span class="n">event</span> <span class="k">instanceof</span> <span class="n">Double</span><span class="o">)</span> <span class="o">{</span>
+    <span class="n">Window</span><span class="o">.</span><span class="na">alert</span><span class="o">(</span><span class="s">"Got a double: "</span> <span class="o">+</span> <span class="n">event</span><span class="o">.</span><span class="na">getEvent</span><span class="o">());</span>
+  <span class="o">}</span>
+<span class="o">}</span>
+</pre></div>
+
+<p>The given handler would be invoked whenever a <code>String</code> or <code>Double</code> was posted on
+the event bus, and the actual event would be accessible via the <code>getEvent</code> method
+on <code>MultiEvent</code>. See the <a href="TODO">javadoc</a> for more details.</p>
+
+<h3>
+<a name="dead-events" class="anchor" href="#dead-events"><span class="octicon octicon-link"></span></a>Dead events</h3>
+
+<p>If an event is fired that has no registered handlers, SuperEventBus will wrap
+that event in a <code>DeadEvent</code> and re-fire it. This makes it possible to register a
+handler for <code>DeadEvent</code> that can do something like log a warning when an event
+without a handler is fired, which can help detect misconfiguration issues. Note
+that <code>DeadEvent</code> will never be fired if a handler for <code>Object</code> is registered,
+since that handler will receive every event posted on the event bus. See the
+<a href="TODO">javadoc</a> for more details.</p>
+
+<h1>
+<a name="how-do-i-install-it" class="anchor" href="#how-do-i-install-it"><span class="octicon octicon-link"></span></a>How do I install it?</h1>
+
+<p>If you're using Maven, you can add the following to your <code>&lt;dependencies&gt;</code>
+section:</p>
+
+<div class="highlight"><pre><span class="nt">&lt;dependency&gt;</span>
+  <span class="nt">&lt;groupId&gt;</span>com.ekuefler.supereventbus<span class="nt">&lt;/groupId&gt;</span>
+  <span class="nt">&lt;artifactId&gt;</span>supereventbus<span class="nt">&lt;/artifactId&gt;</span>
+  <span class="nt">&lt;version&gt;</span>alpha1<span class="nt">&lt;/version&gt;</span>
+<span class="nt">&lt;/dependency&gt;</span>
+</pre></div>
+
+<p>You can also download the <a href="TODO">jar</a> directly or check out the source using git
+from <a href="https://github.com/ekuefler/gwt-supereventbus.git">https://github.com/ekuefler/gwt-supereventbus.git</a>.</p>
+      </section>
+    </div>
+
+    <!-- FOOTER  -->
+    <div id="footer_wrap" class="outer">
+      <footer class="inner">
+        <p class="copyright">SuperEventBus maintained by <a href="https://github.com/ekuefler">ekuefler</a></p>
+        <p>Published with <a href="http://pages.github.com">GitHub Pages</a></p>
+      </footer>
+    </div>
+
+    
+
+  </body>
+</html>
