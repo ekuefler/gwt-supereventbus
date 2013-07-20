@@ -104,7 +104,7 @@ import java.util.TreeMap;
  *
  * @see Subscribe, DeadEvent, com.ekuefler.supereventbus.shared.filtering.When,
  *      com.ekuefler.supereventbus.shared.priority.WithPriority, MultiEvent
- * @author ekuefler@google.com (Erik Kuefler)
+ * @author ekuefler@gmail.com (Erik Kuefler)
  */
 public class EventBus {
 

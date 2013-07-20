@@ -20,7 +20,7 @@ package com.ekuefler.supereventbus.shared;
  * registered exception handlers.
  *
  * @see {@link EventBus#addExceptionHandler}
- * @author ekuefler@google.com (Erik Kuefler)
+ * @author ekuefler@gmail.com (Erik Kuefler)
  */
 public interface ExceptionHandler {
   /**

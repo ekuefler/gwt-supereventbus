@@ -19,7 +19,7 @@ package com.ekuefler.supereventbus.shared;
  * cause of this exception. This event is not fired by {@link EventBus#post}, but is passed to any
  * exception handlers registered on the event bus via {@link EventBus#addExceptionHandler}.
  *
- * @author ekuefler@google.com (Erik Kuefler)
+ * @author ekuefler@gmail.com (Erik Kuefler)
  */
 public class EventBusException extends Exception {
   private final Object source;

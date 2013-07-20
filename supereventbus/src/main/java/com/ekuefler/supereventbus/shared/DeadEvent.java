@@ -21,7 +21,7 @@ package com.ekuefler.supereventbus.shared;
  * will NOT be fired. Also note that if the application registers a handler for {@link Object}, all
  * events will be handled, and so {@link DeadEvent} will never be fired.
  *
- * @author ekuefler@google.com (Erik Kuefler)
+ * @author ekuefler@gmail.com (Erik Kuefler)
  */
 public class DeadEvent {
 

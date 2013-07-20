@@ -20,7 +20,7 @@ package com.ekuefler.supereventbus.shared.filtering;
  * <p>
  * Note that all event handlers MUST define a zero-argument public constructor.
  *
- * @author ekuefler@google.com (Erik Kuefler)
+ * @author ekuefler@gmail.com (Erik Kuefler)
  * @see When
  *
  * @param <H> type of the class containing the event handler method. This can be a general type like

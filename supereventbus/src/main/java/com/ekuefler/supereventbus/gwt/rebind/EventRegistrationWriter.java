@@ -37,7 +37,7 @@ import java.util.List;
  * by iterating over the target class's methods and generating an anonymous handler class for each
  * method annotated with {@link Subscribe}.
  *
- * @author ekuefler@google.com (Erik Kuefler)
+ * @author ekuefler@gmail.com (Erik Kuefler)
  */
 class EventRegistrationWriter {
 

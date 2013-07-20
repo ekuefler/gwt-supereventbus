@@ -43,7 +43,7 @@ package com.ekuefler.supereventbus.shared.multievent;
  * Instances of MultiEvent are created automatically by the event bus - users should never
  * instantiate or post these events on the event bus.
  *
- * @author ekuefler@google.com (Erik Kuefler)
+ * @author ekuefler@gmail.com (Erik Kuefler)
  * @see EventTypes
  */
 public class MultiEvent {

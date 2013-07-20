@@ -26,7 +26,7 @@ import com.google.web.bindery.event.shared.HandlerRegistration;
  * Since only a small subset of {@link EventBus}'s functionality is exposed here, this should only
  * be used for existing/legacy code that can't be refactored to use {@link EventBus} directly.
  *
- * @author ekuefler@google.com (Erik Kuefler)
+ * @author ekuefler@gmail.com (Erik Kuefler)
  */
 public class EventBusAdapter extends com.google.web.bindery.event.shared.EventBus {
 

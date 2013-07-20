@@ -35,7 +35,7 @@ import java.util.List;
  * parts of creating the source writer and then delegates to {@link EventRegistrationWriter}. This
  * class is used by the GWT compiler and should not be referenced directly by users.
  *
- * @author ekuefler@google.com (Erik Kuefler)
+ * @author ekuefler@gmail.com (Erik Kuefler)
  */
 public class EventRegistrationGenerator extends Generator {
 

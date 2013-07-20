@@ -44,7 +44,7 @@ import java.lang.annotation.Target;
  * Whenever MyEvent is fired, the handler method would be notified only if the widget containing it
  * was visible.
  *
- * @author ekuefler@google.com (Erik Kuefler)
+ * @author ekuefler@gmail.com (Erik Kuefler)
  * @see EventFilter, com.ekuefler.supereventbus.shared.Subscribe
  */
 @Documented

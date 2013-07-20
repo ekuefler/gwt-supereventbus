@@ -25,7 +25,7 @@ import java.lang.annotation.Target;
  * This annotation must be applied only to parameters of type {@link MultiEvent} on methods
  * annotated with {@link com.ekuefler.supereventbus.shared.Subscribe}.
  *
- * @author ekuefler@google.com (Erik Kuefler)
+ * @author ekuefler@gmail.com (Erik Kuefler)
  * @see MultiEvent
  */
 @Documented

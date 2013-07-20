@@ -48,7 +48,7 @@ import java.lang.annotation.Target;
  * run before or after the majority of handlers, such as loggers that record when events start and
  * finish being processed.
  *
- * @author ekuefler@google.com (Erik Kuefler)
+ * @author ekuefler@gmail.com (Erik Kuefler)
  * @see com.ekuefler.supereventbus.shared.Subscribe
  */
 @Documented

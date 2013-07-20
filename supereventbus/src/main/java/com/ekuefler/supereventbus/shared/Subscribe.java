@@ -31,7 +31,7 @@ import java.lang.annotation.Target;
  *
  * @see EventBus com.ekuefler.supereventbus.shared.priority.WithPriority
  *      com.ekuefler.supereventbus.shared.filtering.When
- * @author ekuefler@google.com (Erik Kuefler)
+ * @author ekuefler@gmail.com (Erik Kuefler)
  */
 @Documented
 @Inherited

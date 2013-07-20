@@ -19,7 +19,7 @@ import com.ekuefler.supereventbus.shared.Subscribe;
  * Internal representation of a {@link Subscribe}-annotated method. Users should not implement or
  * reference this interface - it is used internally and is subject to change.
  *
- * @author ekuefler@google.com (Erik Kuefler)
+ * @author ekuefler@gmail.com (Erik Kuefler)
  *
  * @param <I> type of the instance in ehich the handler method is defined
  * @param <A> type of the argument to the handler method
