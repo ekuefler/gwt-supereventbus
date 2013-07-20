@@ -49,7 +49,6 @@ import java.lang.annotation.Target;
  * finish being processed.
  *
  * @author ekuefler@gmail.com (Erik Kuefler)
- * @see com.ekuefler.supereventbus.shared.Subscribe
  */
 @Documented
 @Inherited

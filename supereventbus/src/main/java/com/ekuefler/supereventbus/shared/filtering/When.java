@@ -45,7 +45,6 @@ import java.lang.annotation.Target;
  * was visible.
  *
  * @author ekuefler@gmail.com (Erik Kuefler)
- * @see EventFilter, com.ekuefler.supereventbus.shared.Subscribe
  */
 @Documented
 @Inherited

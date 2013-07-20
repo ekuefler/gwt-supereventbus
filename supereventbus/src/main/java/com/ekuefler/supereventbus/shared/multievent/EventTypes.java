@@ -26,7 +26,6 @@ import java.lang.annotation.Target;
  * annotated with {@link com.ekuefler.supereventbus.shared.Subscribe}.
  *
  * @author ekuefler@gmail.com (Erik Kuefler)
- * @see MultiEvent
  */
 @Documented
 @Inherited

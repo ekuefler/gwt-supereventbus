@@ -44,7 +44,6 @@ package com.ekuefler.supereventbus.shared.multievent;
  * instantiate or post these events on the event bus.
  *
  * @author ekuefler@gmail.com (Erik Kuefler)
- * @see EventTypes
  */
 public class MultiEvent {
 

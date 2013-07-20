@@ -19,7 +19,6 @@ package com.ekuefler.supereventbus.shared;
  * handlers are collected, wrapped in an {@link EventBusException}, and passed in turn to all
  * registered exception handlers.
  *
- * @see {@link EventBus#addExceptionHandler}
  * @author ekuefler@gmail.com (Erik Kuefler)
  */
 public interface ExceptionHandler {

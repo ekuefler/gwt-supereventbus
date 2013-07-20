@@ -29,8 +29,6 @@ import java.lang.annotation.Target;
  * can be combined with {@link com.ekuefler.supereventbus.shared.priority.WithPriority} to override
  * the former and {@link com.ekuefler.supereventbus.shared.filtering.When} to override the latter.
  *
- * @see EventBus com.ekuefler.supereventbus.shared.priority.WithPriority
- *      com.ekuefler.supereventbus.shared.filtering.When
  * @author ekuefler@gmail.com (Erik Kuefler)
  */
 @Documented

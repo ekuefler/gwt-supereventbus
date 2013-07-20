@@ -22,9 +22,10 @@ import com.google.web.bindery.event.shared.HandlerRegistration;
  * An adapter allowing SuperEventBus to be referenced via GWT's built-in
  * {@link com.google.web.bindery.event.shared.EventBus} interface. Calls to methods on this class
  * are forwarded to an underlying {@link EventBus}, effectively allowing an {@link EventBus} to be
- * passed to existing methods that expect {@link com.google.web.bindery.event.shared.EventBus}.
- * Since only a small subset of {@link EventBus}'s functionality is exposed here, this should only
- * be used for existing/legacy code that can't be refactored to use {@link EventBus} directly.
+ * passed to existing methods that expect a legacy
+ * {@link com.google.web.bindery.event.shared.EventBus}. Since only a small subset of
+ * {@link EventBus}'s functionality is exposed here, this should only be used for existing/legacy
+ * code that can't be refactored to use {@link EventBus} directly.
  *
  * @author ekuefler@gmail.com (Erik Kuefler)
  */

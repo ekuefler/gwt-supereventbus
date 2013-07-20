@@ -69,8 +69,8 @@ import java.util.TreeMap;
  * enough to express event handlers that should work on multiple types of events, but occasionally
  * it is necessary to handle multiple events of unrelated types using the same method. SuperEventBus
  * allows this via the {@link MultiEvent} class and
- * {@link com.ekuefler.supereventbus.shared.multievent.EventTypes;} annotation, which allow events
- * of several specified types to be wrapped and passed to a single method.
+ * {@link com.ekuefler.supereventbus.shared.multievent.EventTypes} annotation, which allow events of
+ * several specified types to be wrapped and passed to a single method.
  *
  * <li><b>DeadEvent</b> - in order to help identify misconfiguration issues, SuperEventBus
  * automatically posts a {@link DeadEvent} whenever an event is fired that has no handlers. The
@@ -102,8 +102,6 @@ import java.util.TreeMap;
  * eventBus.post(new MyEvent(&quot;some data&quot;));
  * </pre>
  *
- * @see Subscribe, DeadEvent, com.ekuefler.supereventbus.shared.filtering.When,
- *      com.ekuefler.supereventbus.shared.priority.WithPriority, MultiEvent
  * @author ekuefler@gmail.com (Erik Kuefler)
  */
 public class EventBus {
