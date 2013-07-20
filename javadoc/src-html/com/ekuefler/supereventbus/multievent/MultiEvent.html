@@ -1,0 +1,133 @@
+<HTML>
+<BODY BGCOLOR="white">
+<PRE>
+<FONT color="green">001</FONT>    /*<a name="line.1"></a>
+<FONT color="green">002</FONT>     * Copyright 2013 Erik Kuefler<a name="line.2"></a>
+<FONT color="green">003</FONT>     *<a name="line.3"></a>
+<FONT color="green">004</FONT>     * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except<a name="line.4"></a>
+<FONT color="green">005</FONT>     * in compliance with the License. You may obtain a copy of the License at<a name="line.5"></a>
+<FONT color="green">006</FONT>     *<a name="line.6"></a>
+<FONT color="green">007</FONT>     * http://www.apache.org/licenses/LICENSE-2.0<a name="line.7"></a>
+<FONT color="green">008</FONT>     *<a name="line.8"></a>
+<FONT color="green">009</FONT>     * Unless required by applicable law or agreed to in writing, software distributed under the License<a name="line.9"></a>
+<FONT color="green">010</FONT>     * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express<a name="line.10"></a>
+<FONT color="green">011</FONT>     * or implied. See the License for the specific language governing permissions and limitations under<a name="line.11"></a>
+<FONT color="green">012</FONT>     * the License.<a name="line.12"></a>
+<FONT color="green">013</FONT>     */<a name="line.13"></a>
+<FONT color="green">014</FONT>    package com.ekuefler.supereventbus.multievent;<a name="line.14"></a>
+<FONT color="green">015</FONT>    <a name="line.15"></a>
+<FONT color="green">016</FONT>    /**<a name="line.16"></a>
+<FONT color="green">017</FONT>     * An event wrapping another event that could be one of several unrelated types. This allows a<a name="line.17"></a>
+<FONT color="green">018</FONT>     * handler method to handle events of multiple types that are not assignable to each other. For<a name="line.18"></a>
+<FONT color="green">019</FONT>     * example, the following method would be invoked whenever Strings or Doubles were posted on the<a name="line.19"></a>
+<FONT color="green">020</FONT>     * event bus:<a name="line.20"></a>
+<FONT color="green">021</FONT>     *<a name="line.21"></a>
+<FONT color="green">022</FONT>     * &lt;pre&gt;<a name="line.22"></a>
+<FONT color="green">023</FONT>     * &amp;#064;Subscribe<a name="line.23"></a>
+<FONT color="green">024</FONT>     * void handleMultipleTypes(&amp;#064;EventTypes({String.class, Double.class}) MultiEvent event) {<a name="line.24"></a>
+<FONT color="green">025</FONT>     *   if (event instanceof String) {<a name="line.25"></a>
+<FONT color="green">026</FONT>     *     Window.alert(&amp;quot;Got a string: &amp;quot; + event.getEvent());<a name="line.26"></a>
+<FONT color="green">027</FONT>     *   } else if (event instanceof Double) {<a name="line.27"></a>
+<FONT color="green">028</FONT>     *     Window.alert(&amp;quot;Got a double: &amp;quot; + event.getEvent());<a name="line.28"></a>
+<FONT color="green">029</FONT>     *   }<a name="line.29"></a>
+<FONT color="green">030</FONT>     * }<a name="line.30"></a>
+<FONT color="green">031</FONT>     * &lt;/pre&gt;<a name="line.31"></a>
+<FONT color="green">032</FONT>     *<a name="line.32"></a>
+<FONT color="green">033</FONT>     * Note the use of the {@link EventTypes} annotation to indicate which types of events should be<a name="line.33"></a>
+<FONT color="green">034</FONT>     * handled. Parameters of type {@link MultiEvent} in Subscribe-annotated methods must always contain<a name="line.34"></a>
+<FONT color="green">035</FONT>     * this annotation.<a name="line.35"></a>
+<FONT color="green">036</FONT>     * &lt;p&gt;<a name="line.36"></a>
+<FONT color="green">037</FONT>     * Also note that this technique should be used relatively sparingly. Most of the time, events that<a name="line.37"></a>
+<FONT color="green">038</FONT>     * should be handled in the same way should be made to extend a common base class or interface, in<a name="line.38"></a>
+<FONT color="green">039</FONT>     * which case that type can be made the argument to the handler method instead of MultiEvent.<a name="line.39"></a>
+<FONT color="green">040</FONT>     * MultiEvent should only be used to handle events of unrelated types that can't be made to extend a<a name="line.40"></a>
+<FONT color="green">041</FONT>     * common base.<a name="line.41"></a>
+<FONT color="green">042</FONT>     * &lt;p&gt;<a name="line.42"></a>
+<FONT color="green">043</FONT>     * Instances of MultiEvent are created automatically by the event bus - users should never<a name="line.43"></a>
+<FONT color="green">044</FONT>     * instantiate or post these events on the event bus.<a name="line.44"></a>
+<FONT color="green">045</FONT>     *<a name="line.45"></a>
+<FONT color="green">046</FONT>     * @author ekuefler@gmail.com (Erik Kuefler)<a name="line.46"></a>
+<FONT color="green">047</FONT>     */<a name="line.47"></a>
+<FONT color="green">048</FONT>    public class MultiEvent {<a name="line.48"></a>
+<FONT color="green">049</FONT>    <a name="line.49"></a>
+<FONT color="green">050</FONT>      private final Object event;<a name="line.50"></a>
+<FONT color="green">051</FONT>    <a name="line.51"></a>
+<FONT color="green">052</FONT>      /**<a name="line.52"></a>
+<FONT color="green">053</FONT>       * Instantiates a new MultiEvent wrapping the given event. Users should never have to invoke this<a name="line.53"></a>
+<FONT color="green">054</FONT>       * method directly.<a name="line.54"></a>
+<FONT color="green">055</FONT>       */<a name="line.55"></a>
+<FONT color="green">056</FONT>      public MultiEvent(Object event) {<a name="line.56"></a>
+<FONT color="green">057</FONT>        this.event = event;<a name="line.57"></a>
+<FONT color="green">058</FONT>      }<a name="line.58"></a>
+<FONT color="green">059</FONT>    <a name="line.59"></a>
+<FONT color="green">060</FONT>      /**<a name="line.60"></a>
+<FONT color="green">061</FONT>       * Returns the underlying event that this event wraps, which will be of a type assignable to one<a name="line.61"></a>
+<FONT color="green">062</FONT>       * of the types declared in the {@link EventTypes} annotation for this parameter.<a name="line.62"></a>
+<FONT color="green">063</FONT>       */<a name="line.63"></a>
+<FONT color="green">064</FONT>      public Object getEvent() {<a name="line.64"></a>
+<FONT color="green">065</FONT>        return event;<a name="line.65"></a>
+<FONT color="green">066</FONT>      }<a name="line.66"></a>
+<FONT color="green">067</FONT>    }<a name="line.67"></a>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+</PRE>
+</BODY>
+</HTML>
