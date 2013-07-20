@@ -1,21 +1,21 @@
 What is SuperEventBus?
-======================
+----------------------
 
 SuperEventBus is a high-powered event bus for GWT. It is a replacement for the
 built-in com.google.web.bindery.event.shared.EventBus.
 
-SuperEventBus is currently an *experimental* API that is subject to change.
+SuperEventBus is currently an **experimental** API that is subject to change.
 Please leave feedback and feature requests in the [issue tracker][0]!
 
 Why do I need a new event bus?
-==============================
+------------------------------
 
 GWT's event bus is a great way to make your application more maintainable by
 decoupling components from one another, allowing you to work on one without
 affecting the others. However, the built-in event bus has several limitations.
 Specifically,
 
- * It's *inflexible*. All events in GWT's event system must extend an `Event`
+ * It's **inflexible**. All events in GWT's event system must extend an `Event`
    class, requiring you to define a new event for any kind of data that must be
    posted on the event bus. Like Guava's event bus, SuperEventBus allows you to
    post any type of event, allowing you to do things like update model objects
@@ -23,35 +23,35 @@ Specifically,
    always active when registered - SuperEventBus allows you to define filters
    that can prevent events from being handled in certain situations (say, when
    the component is not visible.)
- * It's *verbose*. Extending `Event` requires implementing several boilerplate
+ * It's **verbose**. Extending `Event` requires implementing several boilerplate
    methods, and registering handlers usually requires creating clunky anonymous
    classes. SuperEventBus again takes inspiration from Guava, allowing you to
    annotate existing methods with the `@Subscribe` annotation to cause them to
    be automatically registered as event handlers.
- * It's *monomorphic*. A handler registered for a given event type will only hear
-   instances of that exact type and none of its subtypes. This requires you to
-   register redundant handlers for events that should be handled in similar ways.
-   In contrast, SuperEventBus's handlers a fully polymorphic, so a handler for a
-   given type will be invoked whenever any subtype of that event is posted. This
-   lets you do powerful things, like defining tagging interfaces for events that
-   share properties that should be handled in the same way, or even registering a
-   handler for `Object` that will receive every event in the system. When just a
-   single polymorphic type still isn't enough, SuperEventBus also allows the use
-   of MultiEvents to handle many events with unrelated types using a single
-   handler method.
- * It's *unpredictable*. GWT's event bus dispatches events using a stack, so that
-   when one event fires another event it can be impossible to tell which order
-   other handlers will see those events in. There is also no way to tell GWT that
-   certain handlers should always be invoked before or after other handlers.
-   SuperEventBus uses a queue that guarantees events will always be handled in
-   the same order in which they're fired, and allows you to specify priorities
-   for handlers to affect the order in which they are invoked.
+ * It's **monomorphic**. A handler registered for a given event type will only
+   hear instances of that exact type and none of its subtypes. This requires you
+   to register redundant handlers for events that should be handled in similar
+   ways. In contrast, SuperEventBus's handlers a fully polymorphic, so a handler
+   for a given type will be invoked whenever any subtype of that event is posted.
+   This lets you do powerful things, like defining tagging interfaces for events
+   that share properties that should be handled in the same way, or even
+   registering a handler for `Object` that will receive every event in the
+   system. When just a single polymorphic type still isn't enough, SuperEventBus
+   also allows the use of MultiEvents to handle many events with unrelated types
+   using a single handler method.
+ * It's **unpredictable**. GWT's event bus dispatches events using a stack, so
+   that when one event fires another event it can be impossible to tell which
+   order other handlers will see those events in. There is also no way to tell
+   GWT that certain handlers should always be invoked before or after other
+   handlers. SuperEventBus uses a queue that guarantees events will always be
+   handled in the same order in which they're fired, and allows you to specify
+   priorities for handlers to affect the order in which they are invoked.
 
 SuperEventBus addresses all of these problems and more, providing a more powerful
 event bus that is easier to use.
 
 How do I use SuperEventBus?
-===========================
+---------------------------
 
 SuperEventBus uses a simple annotation-based interface inspired by [Guava's event
 bus][1]. To define a handler method, just annotate a non-private method that 
@@ -92,7 +92,7 @@ users will define their own event types rather than posting existing types
 directly.
 
 What else can it do?
-====================
+--------------------
 
 SuperEventBus contains several advanced features that have no analogue in GWT's
 built-in event bus. It's easy to get started with SuperEventBus without these
@@ -161,7 +161,7 @@ since that handler will receive every event posted on the event bus. See the
 [javadoc][5] for more details.
 
 How do I install it?
-====================
+--------------------
 
 If you're using Maven, you can add the following to your `<dependencies>`
 section:
@@ -177,7 +177,7 @@ section:
 You can also download the [jar][6] directly or check out the source using git
 from <https://github.com/ekuefler/gwt-supereventbus.git>.
 
-[0]: TODO
+[0]: https://github.com/ekuefler/gwt-supereventbus/issues
 [1]: https://code.google.com/p/guava-libraries/wiki/EventBusExplained
 [2]: TODO
 [3]: TODO
