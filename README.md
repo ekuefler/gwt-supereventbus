@@ -179,8 +179,8 @@ from <https://github.com/ekuefler/gwt-supereventbus.git>.
 
 [0]: https://github.com/ekuefler/gwt-supereventbus/issues
 [1]: https://code.google.com/p/guava-libraries/wiki/EventBusExplained
-[2]: TODO
-[3]: TODO
-[4]: TODO
-[5]: TODO
+[2]: http://ekuefler.github.io/gwt-supereventbus/javadoc/index.html?com/ekuefler/supereventbus/priority/WithPriority.html
+[3]: http://ekuefler.github.io/gwt-supereventbus/javadoc/index.html?com/ekuefler/supereventbus/filtering/When.html
+[4]: http://ekuefler.github.io/gwt-supereventbus/javadoc/index.html?com/ekuefler/supereventbus/multievent/MultiEvent.html
+[5]: http://ekuefler.github.io/gwt-supereventbus/javadoc/index.html?com/ekuefler/supereventbus/DeadEvent.html
 [6]: TODO
