@@ -32,9 +32,9 @@
   </licenses>
 
   <scm>
-    <connection>scm:git:git@github.com:ekuefler/supereventbus.git</connection>
-    <developerConnection>scm:git:git@github.com:ekuefler/supereventbus.git</developerConnection>
-    <url>git@github.com:ekuefler/supereventbus.git</url>
+    <connection>scm:git:git@github.com:ekuefler/gwt-supereventbus.git</connection>
+    <developerConnection>scm:git:git@github.com:ekuefler/gwt-supereventbus.git</developerConnection>
+    <url>git@github.com:ekuefler/gwt-supereventbus.git</url>
   </scm>
 
   <developers>
