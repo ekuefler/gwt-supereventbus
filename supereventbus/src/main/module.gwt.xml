@@ -15,9 +15,9 @@
 -->
 
 <module>
-  <source path="shared" />
+  <source path="" />
 
-  <generate-with class="com.ekuefler.supereventbus.gwt.rebind.EventRegistrationGenerator">
-    <when-type-assignable class="com.ekuefler.supereventbus.shared.EventRegistration"/>
+  <generate-with class="com.ekuefler.supereventbus.rebind.EventRegistrationGenerator">
+    <when-type-assignable class="com.ekuefler.supereventbus.EventRegistration"/>
   </generate-with>
 </module>
