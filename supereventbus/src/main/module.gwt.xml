@@ -15,7 +15,7 @@
 -->
 
 <module>
-  <source path="" />
+  <source path="" excludes="rebind/*" />
 
   <generate-with class="com.ekuefler.supereventbus.rebind.EventRegistrationGenerator">
     <when-type-assignable class="com.ekuefler.supereventbus.EventRegistration"/>
