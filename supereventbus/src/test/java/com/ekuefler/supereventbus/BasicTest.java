@@ -13,8 +13,7 @@
  */
 package com.ekuefler.supereventbus;
 
-import com.ekuefler.supereventbus.EventRegistration;
-import com.ekuefler.supereventbus.Subscribe;
+import com.google.gwt.core.client.GWT;
 
 import java.util.List;
 
@@ -62,7 +61,7 @@ public class BasicTest extends SuperEventBusTestCase {
   protected void gwtSetUp() throws Exception {
     super.gwtSetUp();
     owner = new TestOwner();
-    eventBus.register(owner, MyRegistration.class);
+    eventBus.register(owner, (MyRegistration) GWT.create(MyRegistration.class));
   }
 
   public void testShouldDispatchObjects() {

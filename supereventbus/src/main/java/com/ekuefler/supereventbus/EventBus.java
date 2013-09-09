@@ -249,11 +249,9 @@ public class EventBus {
    * invoked with that event.
    *
    * @param owner object to scan for {@link Subscribe}-annotated methods to register
-   * @param registrationClass the class object of a registration interface for the given owner
+   * @param registration the registration interface for the given owner
    */
-  public <T> void register(T owner, Class<? extends EventRegistration<T>> registrationClass) {
-    EventRegistration<T> registration = GWT.create(registrationClass);
-
+  public <T> void register(T owner, EventRegistration<T> registration) {
     // Add each handler method in the class to the global handler map according to its priority. The
     // cache mapping event classes to handler methods will be updated when an event is fired.
     for (EventHandlerMethod<T, ?> method : registration.getMethods()) {

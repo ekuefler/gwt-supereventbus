@@ -13,12 +13,10 @@
  */
 package com.ekuefler.supereventbus;
 
-import com.ekuefler.supereventbus.DeadEvent;
-import com.ekuefler.supereventbus.EventRegistration;
-import com.ekuefler.supereventbus.Subscribe;
 import com.ekuefler.supereventbus.DeadEventTest.TestOwner.MyRegistration;
 import com.ekuefler.supereventbus.filtering.EventFilter;
 import com.ekuefler.supereventbus.filtering.When;
+import com.google.gwt.core.client.GWT;
 
 public class DeadEventTest extends SuperEventBusTestCase {
 
@@ -53,7 +51,7 @@ public class DeadEventTest extends SuperEventBusTestCase {
   protected void gwtSetUp() throws Exception {
     super.gwtSetUp();
     owner = new TestOwner();
-    eventBus.register(owner, MyRegistration.class);
+    eventBus.register(owner, (MyRegistration) GWT.create(MyRegistration.class));
   }
 
   public void testShouldFireDeadEventForEventWithoutHandlers() throws Exception {
