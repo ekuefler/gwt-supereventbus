@@ -16,9 +16,8 @@ package com.ekuefler.supereventbus;
 import java.util.LinkedList;
 import java.util.List;
 
-import com.ekuefler.supereventbus.EventRegistration;
-import com.ekuefler.supereventbus.Subscribe;
 import com.ekuefler.supereventbus.priority.WithPriority;
+import com.google.gwt.core.client.GWT;
 
 public class PriorityTest extends SuperEventBusTestCase {
 
@@ -63,7 +62,7 @@ public class PriorityTest extends SuperEventBusTestCase {
   protected void gwtSetUp() throws Exception {
     super.gwtSetUp();
     owner = new TestOwner();
-    eventBus.register(owner, TestOwner.MyRegistration.class);
+    eventBus.register(owner, (TestOwner.MyRegistration) GWT.create(TestOwner.MyRegistration.class));
   }
 
   public void testShouldHandleInPriorityOrder() {

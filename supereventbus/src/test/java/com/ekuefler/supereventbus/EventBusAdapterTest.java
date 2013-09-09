@@ -13,10 +13,8 @@
  */
 package com.ekuefler.supereventbus;
 
-import com.ekuefler.supereventbus.EventBusAdapter;
-import com.ekuefler.supereventbus.EventRegistration;
-import com.ekuefler.supereventbus.Subscribe;
 import com.ekuefler.supereventbus.EventBusAdapterTest.TestOwner.MyRegistration;
+import com.google.gwt.core.client.GWT;
 import com.google.gwt.event.dom.client.ClickEvent;
 import com.google.gwt.event.dom.client.ClickHandler;
 import com.google.web.bindery.event.shared.HandlerRegistration;
@@ -48,7 +46,7 @@ public class EventBusAdapterTest extends SuperEventBusTestCase {
   }
 
   public void testFireOnAdapterShouldReceiveOnReal() {
-    eventBus.register(owner, MyRegistration.class);
+    eventBus.register(owner, (MyRegistration) GWT.create(MyRegistration.class));
     adapter.fireEvent(new ClickEvent() {});
 
     assertNotNull(owner.event);
