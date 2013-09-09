@@ -13,10 +13,9 @@
  */
 package com.ekuefler.supereventbus;
 
-import com.ekuefler.supereventbus.EventRegistration;
-import com.ekuefler.supereventbus.Subscribe;
 import com.ekuefler.supereventbus.filtering.EventFilter;
 import com.ekuefler.supereventbus.filtering.When;
+import com.google.gwt.core.client.GWT;
 import com.google.gwt.user.client.ui.HasVisibility;
 
 import java.util.LinkedList;
@@ -88,7 +87,7 @@ public class FilteringTest extends SuperEventBusTestCase {
   protected void gwtSetUp() throws Exception {
     super.gwtSetUp();
     owner = new TestOwner();
-    eventBus.register(owner, TestOwner.MyRegistration.class);
+    eventBus.register(owner, (TestOwner.MyRegistration) GWT.create(TestOwner.MyRegistration.class));
   }
 
   public void testShouldApplySingleFilter() {

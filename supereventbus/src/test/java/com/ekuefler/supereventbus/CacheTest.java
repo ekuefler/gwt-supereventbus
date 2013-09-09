@@ -13,8 +13,7 @@
  */
 package com.ekuefler.supereventbus;
 
-import com.ekuefler.supereventbus.EventRegistration;
-import com.ekuefler.supereventbus.Subscribe;
+import com.google.gwt.core.client.GWT;
 
 public class CacheTest extends SuperEventBusTestCase {
 
@@ -33,9 +32,9 @@ public class CacheTest extends SuperEventBusTestCase {
     TestOwner owner1 = new TestOwner();
     TestOwner owner2 = new TestOwner();
 
-    eventBus.register(owner1, TestOwner.MyRegistration.class);
+    eventBus.register(owner1, (TestOwner.MyRegistration) GWT.create(TestOwner.MyRegistration.class));
     eventBus.post("string");
-    eventBus.register(owner2, TestOwner.MyRegistration.class);
+    eventBus.register(owner2, (TestOwner.MyRegistration) GWT.create(TestOwner.MyRegistration.class));
     eventBus.post("string");
 
     assertEquals(2, owner1.eventsHandled);
@@ -45,10 +44,10 @@ public class CacheTest extends SuperEventBusTestCase {
   public void testShouldBeAbleToReRegisterHandlersAfterEventsAreFired() {
     TestOwner owner = new TestOwner();
 
-    eventBus.register(owner, TestOwner.MyRegistration.class);
+    eventBus.register(owner, (TestOwner.MyRegistration) GWT.create(TestOwner.MyRegistration.class));
     eventBus.post("string");
     eventBus.unregister(owner);
-    eventBus.register(owner, TestOwner.MyRegistration.class);
+    eventBus.register(owner, (TestOwner.MyRegistration) GWT.create(TestOwner.MyRegistration.class));
     eventBus.post("string");
 
     assertEquals(2, owner.eventsHandled);
@@ -57,12 +56,12 @@ public class CacheTest extends SuperEventBusTestCase {
   public void testShouldBeAbleToReRegisterHandlersBeforeEventsAreFired() {
     TestOwner owner1 = new TestOwner();
     TestOwner owner2 = new TestOwner();
-    eventBus.register(owner1, TestOwner.MyRegistration.class);
+    eventBus.register(owner1, (TestOwner.MyRegistration) GWT.create(TestOwner.MyRegistration.class));
     eventBus.post("string");
 
-    eventBus.register(owner2, TestOwner.MyRegistration.class);
+    eventBus.register(owner2, (TestOwner.MyRegistration) GWT.create(TestOwner.MyRegistration.class));
     eventBus.unregister(owner2);
-    eventBus.register(owner2, TestOwner.MyRegistration.class);
+    eventBus.register(owner2, (TestOwner.MyRegistration) GWT.create(TestOwner.MyRegistration.class));
     eventBus.post("string");
 
     assertEquals(2, owner1.eventsHandled);
