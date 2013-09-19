@@ -15,6 +15,7 @@ package com.ekuefler.supereventbus;
 
 import com.ekuefler.supereventbus.impl.EventHandlerMethod;
 import com.ekuefler.supereventbus.multievent.MultiEvent;
+import com.google.gwt.core.client.JavaScriptObject;
 import com.google.gwt.core.shared.GWT;
 
 import java.util.ArrayList;
@@ -166,6 +167,10 @@ public class EventBus {
    * after the event has been posted to all handlers and will never throw an exception. After the
    * event has been posted, any exceptions thrown by handlers of the event are collected and passed
    * to each exception handler registered via {@link #addExceptionHandler(ExceptionHandler)}.
+   * <p>
+   * Note that {@link JavaScriptObject}s cannot be posted directly on an event bus since GWT does
+   * not preserve their type information at runtime. If you need to post JavaScriptObjects, wrap
+   * them in a containing object to be posted.
    *
    * @param event event object to post to all handlers
    */
@@ -175,6 +180,8 @@ public class EventBus {
       throw new NullPointerException();
     } else if (event instanceof MultiEvent) {
       throw new IllegalArgumentException("MultiEvents cannot be posted directly");
+    } else if (event instanceof JavaScriptObject) {
+      throw new IllegalArgumentException("JavaScriptObjects cannot be posted");
     }
 
     // Look up the cache entry for the class of the given event, adding a new entry if this is the
