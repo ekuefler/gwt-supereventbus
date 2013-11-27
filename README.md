@@ -170,7 +170,7 @@ section:
 <dependency>
   <groupId>com.ekuefler.supereventbus</groupId>
   <artifactId>supereventbus</artifactId>
-  <version>0.0.1</version>
+  <version>0.1.0</version>
 </dependency>
 ```
 
@@ -183,4 +183,4 @@ from <https://github.com/ekuefler/gwt-supereventbus.git>.
 [3]: http://ekuefler.github.io/gwt-supereventbus/javadoc/index.html?com/ekuefler/supereventbus/filtering/When.html
 [4]: http://ekuefler.github.io/gwt-supereventbus/javadoc/index.html?com/ekuefler/supereventbus/multievent/MultiEvent.html
 [5]: http://ekuefler.github.io/gwt-supereventbus/javadoc/index.html?com/ekuefler/supereventbus/DeadEvent.html
-[6]: http://search.maven.org/remotecontent?filepath=com/ekuefler/supereventbus/supereventbus/0.0.1/supereventbus-0.0.1.jar
+[6]: http://search.maven.org/remotecontent?filepath=com/ekuefler/supereventbus/supereventbus/0.1.0/supereventbus-0.1.0.jar
