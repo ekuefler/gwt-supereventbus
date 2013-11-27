@@ -60,7 +60,7 @@ class EventRegistrationWriter {
         String.format("EventHandlerMethod<%s, ?>", targetType));
 
     // Iterate over each method in the target, looking for methods annotated with @Subscribe
-    for (JMethod method : target.getMethods()) {
+    for (JMethod method : target.getInheritableMethods()) {
       if (method.getAnnotation(Subscribe.class) == null) {
         continue;
       }

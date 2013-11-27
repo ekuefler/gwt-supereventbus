@@ -27,6 +27,7 @@ import org.junit.runners.Suite;
     EventRegistrationWriterTest.class,
     ExceptionTest.class,
     FilteringTest.class,
+    InheritanceTest.class,
     MultiEventTest.class,
     OrderingTest.class,
     PolymorphismTest.class,

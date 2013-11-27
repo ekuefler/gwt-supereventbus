@@ -24,7 +24,6 @@ import com.ekuefler.supereventbus.filtering.When;
 import com.ekuefler.supereventbus.multievent.EventTypes;
 import com.ekuefler.supereventbus.multievent.MultiEvent;
 import com.ekuefler.supereventbus.priority.WithPriority;
-import com.ekuefler.supereventbus.rebind.EventRegistrationWriter;
 import com.google.gwt.core.ext.TreeLogger;
 import com.google.gwt.core.ext.UnableToCompleteException;
 import com.google.gwt.core.ext.typeinfo.JClassType;
@@ -59,7 +58,7 @@ public class EventRegistrationWriterTest {
   @Test
   public void shouldWriteBasicHandler() throws Exception {
     JMethod method = newSubscribeMethod("myMethod", newEventType("MyEvent"));
-    when(target.getMethods()).thenReturn(new JMethod[] {method});
+    when(target.getInheritableMethods()).thenReturn(new JMethod[] {method});
     when(target.getQualifiedSourceName()).thenReturn("MyType");
 
     writer.writeGetMethods(target, output);
@@ -94,7 +93,7 @@ public class EventRegistrationWriterTest {
 
     JMethod method = newSubscribeMethod("myMethod", newEventType("MyEvent"));
     when(method.getAnnotation(When.class)).thenReturn(whenAnnotation );
-    when(target.getMethods()).thenReturn(new JMethod[] {method});
+    when(target.getInheritableMethods()).thenReturn(new JMethod[] {method});
     when(target.getQualifiedSourceName()).thenReturn("MyType");
 
     writer.writeGetMethods(target, output);
@@ -114,7 +113,7 @@ public class EventRegistrationWriterTest {
 
     JMethod method = newSubscribeMethod("myMethod", newEventType("MyEvent"));
     when(method.getAnnotation(WithPriority.class)).thenReturn(priorityAnnotation);
-    when(target.getMethods()).thenReturn(new JMethod[] {method});
+    when(target.getInheritableMethods()).thenReturn(new JMethod[] {method});
     when(target.getQualifiedSourceName()).thenReturn("MyType");
 
     writer.writeGetMethods(target, output);
@@ -135,7 +134,7 @@ public class EventRegistrationWriterTest {
     JMethod method = newSubscribeMethod(
         "myMethod", newEventType(MultiEvent.class.getCanonicalName()));
     when(method.getParameters()).thenReturn(new JParameter[] {param});
-    when(target.getMethods()).thenReturn(new JMethod[] {method});
+    when(target.getInheritableMethods()).thenReturn(new JMethod[] {method});
     when(target.getQualifiedSourceName()).thenReturn("MyType");
 
     writer.writeGetMethods(target, output);
@@ -163,7 +162,7 @@ public class EventRegistrationWriterTest {
     JMethod method = mock(JMethod.class);
     when(method.getAnnotation(Subscribe.class)).thenReturn(mock(Subscribe.class));
     when(method.getParameterTypes()).thenReturn(new JType[] {});
-    when(target.getMethods()).thenReturn(new JMethod[] {method});
+    when(target.getInheritableMethods()).thenReturn(new JMethod[] {method});
 
     writer.writeGetMethods(target, output);
   }
@@ -173,7 +172,7 @@ public class EventRegistrationWriterTest {
     JMethod method = mock(JMethod.class);
     when(method.getAnnotation(Subscribe.class)).thenReturn(mock(Subscribe.class));
     when(method.getParameterTypes()).thenReturn(new JType[] {mock(JType.class), mock(JType.class)});
-    when(target.getMethods()).thenReturn(new JMethod[] {method});
+    when(target.getInheritableMethods()).thenReturn(new JMethod[] {method});
 
     writer.writeGetMethods(target, output);
   }
@@ -184,7 +183,7 @@ public class EventRegistrationWriterTest {
     when(method.getAnnotation(Subscribe.class)).thenReturn(mock(Subscribe.class));
     when(method.getParameterTypes()).thenReturn(new JType[] {mock(JType.class)});
     when(method.isPrivate()).thenReturn(true);
-    when(target.getMethods()).thenReturn(new JMethod[] {method});
+    when(target.getInheritableMethods()).thenReturn(new JMethod[] {method});
 
     writer.writeGetMethods(target, output);
   }
@@ -197,7 +196,7 @@ public class EventRegistrationWriterTest {
 
     JMethod method = newSubscribeMethod("myMethod", newEventType("MyEvent"));
     when(method.getAnnotation(When.class)).thenReturn(whenAnnotation);
-    when(target.getMethods()).thenReturn(new JMethod[] {method});
+    when(target.getInheritableMethods()).thenReturn(new JMethod[] {method});
 
     writer.writeGetMethods(target, output);
   }
@@ -210,7 +209,7 @@ public class EventRegistrationWriterTest {
     JMethod method = newSubscribeMethod(
         "myMethod", newEventType(MultiEvent.class.getCanonicalName()));
     when(method.getParameters()).thenReturn(new JParameter[] {param});
-    when(target.getMethods()).thenReturn(new JMethod[] {method});
+    when(target.getInheritableMethods()).thenReturn(new JMethod[] {method});
 
     writer.writeGetMethods(target, output);
   }
@@ -222,7 +221,7 @@ public class EventRegistrationWriterTest {
 
     JMethod method = newSubscribeMethod("myMethod", newEventType("MyEvent"));
     when(method.getParameters()).thenReturn(new JParameter[] {param});
-    when(target.getMethods()).thenReturn(new JMethod[] {method});
+    when(target.getInheritableMethods()).thenReturn(new JMethod[] {method});
 
     writer.writeGetMethods(target, output);
   }
@@ -236,7 +235,7 @@ public class EventRegistrationWriterTest {
 
     JMethod method = newSubscribeMethod("myMethod", newEventType("MyEvent"));
     when(method.getParameters()).thenReturn(new JParameter[] {param});
-    when(target.getMethods()).thenReturn(new JMethod[] {method});
+    when(target.getInheritableMethods()).thenReturn(new JMethod[] {method});
 
     writer.writeGetMethods(target, output);
   }

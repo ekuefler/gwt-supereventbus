@@ -19,7 +19,7 @@ import java.util.List;
 import com.ekuefler.supereventbus.EventBus;
 import com.google.gwt.junit.client.GWTTestCase;
 
-public class SuperEventBusTestCase extends GWTTestCase {
+public abstract class SuperEventBusTestCase extends GWTTestCase {
 
   protected EventBus eventBus;
 
