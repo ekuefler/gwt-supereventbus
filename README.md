@@ -76,11 +76,16 @@ Then, the class just needs to register itself with an instance of the event bus
 (this is usually done in the constructor of the class):
 
 ```java
-eventBus.register(this, (MyRegistration) GWT.create(MyRegistration.class));
+@Inject
+public MyClass(MyRegistration registration) {
+  eventBus.register(this, registration);
+}
 ```
 
-Once registered, `handleString` will be invoked whenever a `String` is posted on
-the event bus, which is done like this:
+Note that if you're not using Gin, you can also create MyRegistration directly
+via GWT.create instead of injecting it. Once registered, `handleString` will
+be invoked whenever a `String` is posted on the event bus, which is done like
+this:
 
 ```java
 eventBus.post("some string");
