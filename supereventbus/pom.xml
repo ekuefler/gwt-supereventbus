@@ -3,7 +3,7 @@
   <parent>
     <groupId>com.ekuefler.supereventbus</groupId>
     <artifactId>supereventbus-parent</artifactId>
-    <version>0.1.1-SNAPSHOT</version>
+    <version>0.1.1</version>
   </parent>
 
   <artifactId>supereventbus</artifactId>
