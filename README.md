@@ -175,7 +175,7 @@ section:
 <dependency>
   <groupId>com.ekuefler.supereventbus</groupId>
   <artifactId>supereventbus</artifactId>
-  <version>0.1.0</version>
+  <version>0.1.1</version>
 </dependency>
 ```
 
